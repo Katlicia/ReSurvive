@@ -34,6 +34,8 @@ function Enemy:init(sprite, frameW, frameH, totalCols, totalRows, animDelay)
     self.playingDeathAnim = false
     self.deathAnimDone = false
 
+    self:updateHitbox()
+
 end
 
 function Enemy:update(dt, player)
@@ -55,6 +57,7 @@ function Enemy:update(dt, player)
     end
 
     if not self.playingDeathAnim then
+        self:updateHitbox()
         local dx, dy = player.x + 80 - self.x, player.y + 80 - self.y
         local dist = math.sqrt(dx * dx + dy * dy)
         if dist > 0 then
@@ -71,6 +74,7 @@ function Enemy:update(dt, player)
                 self.attackTimer = 0
             end
     end
+
 end
 
 
@@ -94,7 +98,7 @@ end
 
 function Enemy:checkCollisionWithPlayer(player)
     local pw, ph = player.width, player.height
-    local ew, eh = self.frameW-50, self.frameH
+    local ew, eh = self.frameW-50, self.frameH-50
 
     return self.x < player.x + pw and
            self.x + ew > player.x and
@@ -132,5 +136,25 @@ function Enemy:setAnimRow(row)
     end
 end
 
+function Enemy:takeDamage(amount)
+    if not self.alive or self.playingDeathAnim then return end
+
+    self.hp = self.hp - amount
+    if self.hp <= 0 then
+        self.hp = 0
+        self.alive = false
+        self.playingDeathAnim = true
+        self:setAnimRow(2)
+        self.anim.frame = 1
+    end
+end
+
+function Enemy:updateHitbox()
+    self.hitboxX = self.x - self.frameW - self.scale / 2
+    self.hitboxY = self.y - self.frameH - self.scale / 2
+    self.hitboxW =  self.frameW * self.scale
+    self.hitboxH = self.frameH * self.scale
+    self.hitBox = love.graphics.rectangle("fill", self.hitboxX, self.hitboxY, self.hitboxW, self.frameH * self.scale)
+end
 
 return Enemy

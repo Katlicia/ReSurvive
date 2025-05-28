@@ -3,10 +3,7 @@ Player = require "Player/player"
 camera = require "lib/camera"
 EnemySpawner = require "Enemy/enemy_spawner"
 
-local Skeleton = require("Enemy/skeleton")
-local enemies = {}
-
-table.insert(enemies, Skeleton:new())
+math.randomseed(os.time())
 
 local VIRTUAL_WIDTH = 1920
 local VIRTUAL_HEIGHT = 1080
@@ -40,13 +37,11 @@ end
 function love.update(dt)
     camera.x = Player.x + Player.width / 2 - love.graphics.getWidth() / 2
     camera.y = Player.y + Player.height / 2 - love.graphics.getHeight() / 2
-    Player:update(dt)
     -- perlinShader:send("time", love.timer.getTime())
     -- perlinShader:send("resolution", {love.graphics.getWidth(), love.graphics.getHeight()})
-
     EnemySpawner:update(dt, Player)
+    Player:update(dt, EnemySpawner.enemies)
 
-    print("Enemies count: " .. #enemies)
 
 
     cam:lookAt(Player.x + Player.width / 2, Player.y + Player.height / 2)
@@ -59,16 +54,12 @@ function love.draw()
     perlinShader:send("time", love.timer.getTime())
     love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
     love.graphics.setShader()
+
     cam:attach()
         Player:draw()
-
         EnemySpawner:draw()
-
-        love.graphics.setColor(1,1,1)
-        love.graphics.circle('fill', 400, 300, 250)
-        love.graphics.setColor(0,0,0)
-        love.graphics.circle('line', 400, 300, 250)
     cam:detach()
+    
     Player:drawXpBar()
     push:finish()
     Player:drawLevelUpText()

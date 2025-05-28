@@ -32,8 +32,8 @@ function Player:load()
     self.levelUpCanvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight())
 
 
-    self.sprite = love.graphics.newImage("Player/Assets/playersheet.png")
-    self.auraImage = love.graphics.newImage("Player/Assets/aura.png")
+    self.sprite = love.graphics.newImage("Player/Assets/Sprites/playersheet.png")
+    self.auraImage = love.graphics.newImage("Player/Assets/Sprites/aura.png")
     
     -- Player dimensions
     self.x = 1920 / 2 - 64
@@ -83,9 +83,33 @@ function Player:load()
     self.deathAnimDone = false
     self.quads = {}
     self:generateQuads(anim.rows.idle) -- Idle anim at first
+
+    -- Weapons
+    self.whip = {
+        sprite = love.graphics.newImage("Player/Assets/Sprites/slash_sheet.png"),
+        spriteWidth = 288,
+        spriteHeight = 48,
+        quadWidth = 48,
+        quadHeight = 48,
+        totalFrames = 6,
+        currentFrame = 1,
+        cooldown = 2.4,
+        timer = 0,
+        visibleTimer = 0,
+        attack = false,
+        damage = 10,
+        animTimer = 0,
+        frameDelay = 0.1,
+        width = self.height + 70,
+        height = self.width / 2 + 10,
+        sound = love.audio.newSource("Player/Assets/Sounds/whip.wav", "static")
+    }
+
+    self.whipQuads = {}
+    self:generateWhipQuads()
 end
 
-function Player:update(dt)
+function Player:update(dt, enemies)
     -- Update anim
     anim.timer = anim.timer + dt
     if anim.timer >= anim.frameDelay then
@@ -138,12 +162,26 @@ function Player:update(dt)
         self:generateQuads(newRow)
     end
 
+    if self.whip.attack then
+        self.whip.animTimer = self.whip.animTimer + dt
+        if self.whip.animTimer >= self.whip.frameDelay then
+            self.whip.animTimer = 0
+            self.whip.currentFrame = self.whip.currentFrame + 1
+            if self.whip.currentFrame > self.whip.totalFrames then
+                self.whip.currentFrame = 1
+            end
+        end
+    end
+
+
+    Player:whipAttack(dt, enemies)
     Player:xpAnim(dt)
     Player:SetShaderTime()
     Player:LevelUpAnim(dt)
 end
 
 function Player:draw()
+
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
     if not self.frozen then
@@ -164,7 +202,26 @@ function Player:draw()
         end
         love.graphics.draw(self.sprite, self.quads[anim.currentFrame], self.x, self.y, 0, scaleX, 2, originX, 0)
         self:drawHpBar()
+
+        -- WHIP
+        if self.whip.attack then
+            love.graphics.setColor(255, 255, 255)
+            local quad = self.whipQuads[self.whip.currentFrame]
+            local sx = 8
+            local sy = 4
+            if anim.direction == "right" then
+                -- love.graphics.rectangle("fill", self.x + self.width - self.width / 2, self.y + 20, self.whip.width + self.width / 2, self.whip.height)
+                love.graphics.draw(self.whip.sprite, quad, self.x, self.y - 30, 0, sx, sy)
+            else
+                -- love.graphics.rectangle("fill", self.x - self.whip.width, self.y + 20, self.whip.width + self.width / 2, self.whip.height)
+                love.graphics.draw(self.whip.sprite, quad, self.x + self.width, self.y - 30, 0, -sx, sy)
+            end
+        end
+
+
+
     end
+    love.graphics.rectangle("line", self.x, self.y, anim.quadWidth * 2, anim.quadHeight * 2)
 end
 
 function love.keypressed(key, scancode, isrepeat)
@@ -191,6 +248,21 @@ function Player:generateQuads(row)
         )
     end
     anim.currentRow = row
+end
+
+function Player:generateWhipQuads()
+    self.whipQuads = {}
+    local y = 0 * self.whip.quadHeight
+    for i = 1, self.whip.totalFrames do
+        self.whipQuads[i] = love.graphics.newQuad(
+            (i - 1) * self.whip.quadWidth,
+            y,
+            self.whip.quadWidth,
+            self.whip.quadHeight,
+            self.whip.spriteWidth,
+            self.whip.spriteHeight
+        )
+    end
 end
 
 function Player:takeDamage(amount)
@@ -326,5 +398,49 @@ function Player:drawLevelUpText()
     love.graphics.setShader()
 end
 
+function Player:whipAttack(dt, enemies)
+    self.whip.timer = self.whip.timer + dt
+    self.whip.visibleTimer = self.whip.visibleTimer + dt
+
+    if self.whip.timer >= self.whip.cooldown then
+        self.whip.attack = true
+        self.whip.sound:stop()
+        self.whip.sound:play()
+        self.whip.timer = 0
+        self.whip.visibleTimer = 0
+    end
+
+    if self.whip.visibleTimer >= 1 then
+        self.whip.attack = false
+        self.whip.currentFrame = 1
+        self.whip.animTimer = 0
+    end
+
+    if self.whip.attack then
+        for _, enemy in ipairs(enemies) do
+            if self:checkWhipHit(enemy) then
+                enemy:takeDamage(self.whip.damage)
+            end
+        end
+    end
+end
+
+function Player:checkWhipHit(enemy)
+    local whipStartX, whipEndX
+    local whipY = self.y + 20
+
+    if anim.direction == "right" then
+        whipStartX = self.x + self.width - self.width / 2
+        whipEndX = whipStartX + self.whip.width + self.width / 2
+    else
+        whipStartX = self.x - self.whip.width
+        whipEndX = whipStartX + self.whip.width + self.width / 2
+    end
+
+    return enemy.hitboxX < whipEndX and
+           enemy.hitboxX + enemy.hitboxW > whipStartX and
+           enemy.hitboxY < whipY + self.whip.height and
+           enemy.hitboxY + enemy.hitboxH > whipY
+end
 
 return Player
