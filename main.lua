@@ -16,6 +16,9 @@ function love.load()
     defaultFont = love.graphics.newFont("Assets/font/Pixeled.ttf", 16)
     love.graphics.setFont(defaultFont)
     perlinShader = love.graphics.newShader("Shaders/perlin_background.glsl")
+    spaceShader = love.graphics.newShader("Shaders/space_shader.glsl")
+    nebulaShader = love.graphics.newShader("Shaders/nebula_shader.glsl")
+
 
     cam = camera()
 
@@ -41,27 +44,54 @@ function love.update(dt)
     -- perlinShader:send("resolution", {love.graphics.getWidth(), love.graphics.getHeight()})
     EnemySpawner:update(dt, Player)
     Player:update(dt, EnemySpawner.enemies)
-
-
-
     cam:lookAt(Player.x + Player.width / 2, Player.y + Player.height / 2)
 end
 
 function love.draw()
     push:start()
 
-    love.graphics.setShader(perlinShader)
-    perlinShader:send("time", love.timer.getTime())
-    love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-    love.graphics.setShader()
+-- 1. space background
+love.graphics.setShader(spaceShader)
+spaceShader:send("time", love.timer.getTime())
+spaceShader:send("cameraPos", {camera.x, camera.y})
+love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+love.graphics.setShader()
 
-    cam:attach()
-        Player:draw()
-        EnemySpawner:draw()
-    cam:detach()
+-- 2. nebula overlay
+love.graphics.setShader(nebulaShader)
+nebulaShader:send("time", love.timer.getTime())
+nebulaShader:send("cameraPos", {camera.x, camera.y})
+
+love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+love.graphics.setShader()
+
+-- 3. kamera ve oyun nesneleri
+cam:attach()
+Player:draw()
+EnemySpawner:draw()
+cam:detach()
+
+-- 4. HUD
+Player:drawXpBar()
+push:finish()
+Player:drawLevelUpText()
+    -- push:start()
+
+    -- -- love.graphics.setShader(spaceShader)
+    -- -- spaceShader:send("time", love.timer.getTime())
+    -- love.graphics.setShader(nebulaShader)
+    -- nebulaShader:send("time", love.timer.getTime())
+    -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    -- love.graphics.setShader()
+
+    -- cam:attach()
+    --     Player:draw()
+    --     EnemySpawner:draw()
+    -- cam:detach()
     
-    Player:drawXpBar()
-    push:finish()
-    Player:drawLevelUpText()
+    -- Player:drawXpBar()
+    -- push:finish()
+    -- Player:drawLevelUpText()
 end
+
 

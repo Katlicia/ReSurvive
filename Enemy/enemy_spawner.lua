@@ -12,6 +12,7 @@ EnemySpawner.waveTimer = 0
 EnemySpawner.nextWaveTime = 10
 EnemySpawner.waveSize = 10
 EnemySpawner.timeSinceStart = 0
+EnemySpawner.spawnTimer = 0
 
 
 EnemySpawner.enemyTypes = {
@@ -20,6 +21,10 @@ EnemySpawner.enemyTypes = {
 }
 
 function EnemySpawner:update(dt, player)
+    if self.timeSinceStart == 0 then
+        self:spawnInitialWave(player, 5)
+    end
+
     self.spawnTimer = self.spawnTimer - dt
     self.waveTimer = self.waveTimer + dt
     self.timeSinceStart = self.timeSinceStart + dt
@@ -107,7 +112,7 @@ end
 function EnemySpawner:getOffscreenSpawnPos(player)
     local screenW = love.graphics.getWidth()
     local screenH = love.graphics.getHeight()
-    local margin = 200
+    local margin = (self.timeSinceStart < 10) and 100 or 200
     local dir = math.random(1, 4)
     local px, py = player.x, player.y
 
@@ -116,5 +121,20 @@ function EnemySpawner:getOffscreenSpawnPos(player)
     if dir == 3 then return px + math.random(-screenW, screenW), py - screenH / 2 - margin end
     return px + math.random(-screenW, screenW), py + screenH / 2 + margin
 end
+
+function EnemySpawner:spawnInitialWave(player, count)
+    for i = 1, count do
+        local angle = math.rad(math.random(0, 360))
+        local x = player.x + math.cos(angle) * 1920
+        local y = player.y + math.sin(angle) * 1080
+
+        local enemyClass = self:pickRandomEnemy()
+        local enemy = enemyClass:new()
+        enemy.x = x
+        enemy.y = y
+        table.insert(self.enemies, enemy)
+    end
+end
+
 
 return EnemySpawner

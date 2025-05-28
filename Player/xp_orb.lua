@@ -5,7 +5,7 @@ function XpOrb:new(x, y, amount)
     local self = setmetatable({}, XpOrb)
     if not XpOrb.image then
         XpOrb.image = love.graphics.newImage("Player/Assets/Sprites/xp.png") -- veya "xp.png"
-        XpOrb.image:setFilter("linear", "linear")
+        XpOrb.image:setFilter("nearest", "nearest")
     end
 
 
@@ -93,7 +93,7 @@ function XpOrb:draw()
         love.graphics.setColor(1.0, 1.0, 0.3, t.time / 0.3)
         love.graphics.circle("fill", t.x, t.y, self.radius * 0.6)
     end
-
+    
     self.pulseScale = 1 + 0.2 * math.sin(self.pulseTimer * self.pulseSpeed)
     local img = XpOrb.image
     local sx = (self.radius * 2 * self.pulseScale) / img:getWidth()

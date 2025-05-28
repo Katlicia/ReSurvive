@@ -182,11 +182,6 @@ function Player:update(dt, enemies)
 end
 
 function Player:draw()
-    -- DEBUG: XP pickup alanı
-    love.graphics.setColor(0.3, 1, 0.3, 0.2)
-    love.graphics.circle("fill", self.x + self.width / 2, self.y + self.height / 2, self.xpRadius)
-    love.graphics.setColor(1, 1, 1)
-
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
     if not self.frozen then
@@ -222,9 +217,6 @@ function Player:draw()
                 love.graphics.draw(self.whip.sprite, quad, self.x + self.width, self.y - 30, 0, -sx, sy)
             end
         end
-
-
-
     end
 end
 
