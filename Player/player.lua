@@ -56,6 +56,7 @@ function Player:load()
     self.xpLerpSpeed = 4
     self.xpAnimationQueue = {}
     self.displayedXp = 0
+    self.xpRadius = 100
 
     -- Frame state
     self.frozen = false
@@ -97,7 +98,7 @@ function Player:load()
         timer = 0,
         visibleTimer = 0,
         attack = false,
-        damage = 10,
+        damage = 5,
         animTimer = 0,
         frameDelay = 0.1,
         width = self.height + 70,
@@ -181,6 +182,10 @@ function Player:update(dt, enemies)
 end
 
 function Player:draw()
+    -- DEBUG: XP pickup alanı
+    love.graphics.setColor(0.3, 1, 0.3, 0.2)
+    love.graphics.circle("fill", self.x + self.width / 2, self.y + self.height / 2, self.xpRadius)
+    love.graphics.setColor(1, 1, 1)
 
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
@@ -221,7 +226,6 @@ function Player:draw()
 
 
     end
-    love.graphics.rectangle("line", self.x, self.y, anim.quadWidth * 2, anim.quadHeight * 2)
 end
 
 function love.keypressed(key, scancode, isrepeat)

@@ -1,14 +1,23 @@
--- EnemySpawner.lua
+local Slime = require("Enemy/slime")
 local Skeleton = require("Enemy/skeleton")
+local XpOrb = require("Player/xp_orb")
+
 
 local EnemySpawner = {}
 EnemySpawner.enemies = {}
+EnemySpawner.orbs = {}
 EnemySpawner.spawnTimer = 0
-EnemySpawner.spawnInterval = 2.0
+EnemySpawner.spawnInterval = 1.0
 EnemySpawner.waveTimer = 0
 EnemySpawner.nextWaveTime = 10
 EnemySpawner.waveSize = 10
 EnemySpawner.timeSinceStart = 0
+
+
+EnemySpawner.enemyTypes = {
+    { class = Slime, unlockTime = 0 },
+    { class = Skeleton, unlockTime = 20 }
+}
 
 function EnemySpawner:update(dt, player)
     self.spawnTimer = self.spawnTimer - dt
@@ -30,21 +39,50 @@ function EnemySpawner:update(dt, player)
     for i = #self.enemies, 1, -1 do
         local enemy = self.enemies[i]
         enemy:update(dt, player)
-        if enemy.deathAnimDone then
+
+        if not enemy.alive and enemy.currentAnim.status == "paused" then
+            local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue)
+            table.insert(self.orbs, orb)
             table.remove(self.enemies, i)
         end
     end
+
+
+    for i = #self.orbs, 1, -1 do
+        local orb = self.orbs[i]
+        orb:update(dt, player)
+        if orb.collected then
+            table.remove(self.orbs, i)
+        end
+    end
+
 end
 
 function EnemySpawner:draw()
     for _, enemy in ipairs(self.enemies) do
         enemy:draw()
     end
+
+    for _, orb in ipairs(self.orbs) do
+        orb:draw()
+    end
+
+end
+
+function EnemySpawner:getAvailableEnemyTypes()
+    local available = {}
+    for _, e in ipairs(self.enemyTypes) do
+        if self.timeSinceStart >= e.unlockTime then
+            table.insert(available, e.class)
+        end
+    end
+    return available
 end
 
 function EnemySpawner:spawnSingle(player)
     local x, y = self:getOffscreenSpawnPos(player)
-    local enemy = Skeleton:new()
+    local enemyClass = self:pickRandomEnemy()
+    local enemy = enemyClass:new()
     enemy.x = x
     enemy.y = y
     table.insert(self.enemies, enemy)
@@ -53,11 +91,17 @@ end
 function EnemySpawner:spawnWave(player, count)
     local baseX, baseY = self:getOffscreenSpawnPos(player)
     for i = 1, count do
-        local enemy = Skeleton:new()
+        local enemyClass = self:pickRandomEnemy()
+        local enemy = enemyClass:new()
         enemy.x = baseX + (i % 5) * 60
         enemy.y = baseY + math.floor(i / 5) * 60
         table.insert(self.enemies, enemy)
     end
+end
+
+function EnemySpawner:pickRandomEnemy()
+    local available = self:getAvailableEnemyTypes()
+    return available[math.random(#available)]
 end
 
 function EnemySpawner:getOffscreenSpawnPos(player)
