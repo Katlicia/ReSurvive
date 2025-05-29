@@ -1,7 +1,8 @@
 local Player = {}
 
-function Player:load()
+function Player:load(uiRef)
     -- Load shaders
+    self.ui = uiRef
     xpShader = love.graphics.newShader("Shaders/bar_shader.glsl")
     xpBgShader = love.graphics.newShader("Shaders/bar_shader.glsl")
 
@@ -46,7 +47,9 @@ function Player:load()
     self.maxHpBar = 200
     self.hp = self.maxHp
     self.alive = true
-    self.speed = 250
+    self.baseSpeed = 250
+    self.speed = self.baseSpeed
+    self.maxSkillLevel = 10
 
     -- Xp and level
     self.level = 1
@@ -88,6 +91,8 @@ function Player:load()
     -- Weapons
     self.whip = {
         name = "Whip",
+        icon = love.graphics.newImage("Player/Assets/Sprites/whip-icon.png"),
+        level = 1,
         sprite = love.graphics.newImage("Player/Assets/Sprites/slash_sheet.png"),
         spriteWidth = 288,
         spriteHeight = 48,
@@ -110,11 +115,28 @@ function Player:load()
 
     self.timeStop = {
         name = "Clock",
+        icon = love.graphics.newImage("Player/Assets/Sprites/timestop-icon.png"),
+        level = 0,
         sound = love.audio.newSource("Player/Assets/Sounds/time.ogg", "static"),
+        timer = 0,
         transitionTime = 0,
-        duration = 2,
+        sumTime = 0,
+        duration = 4,
         transitionActive = false,
-        cooldown = 120,
+        baseCooldown = 10,
+        getCooldown = function(self)
+            local reductionFactor = 1 - (self.level - 1) * 0.15
+            return math.max(10, self.baseCooldown * reductionFactor) -- min. 20 sn
+        end
+    }
+
+    self.wing = {
+        name = "Wing",
+        icon = love.graphics.newImage("Player/Assets/Sprites/wing-icon.png"),
+        level = 0,
+        boost = function(level)
+            return Player.baseSpeed * (1 + 0.1 * level)
+        end
     }
 
     self.whipQuads = {}
@@ -191,9 +213,18 @@ function Player:update(dt, enemies)
         end
     end
 
+    if self.timeStop.level > 0 then
+        self.timeStop.timer = (self.timeStop.timer or 0) + dt
+        if self.timeStop.timer >= self.timeStop:getCooldown() then
+            self:activateTimeStop()
+            self.timeStop.timer = 0
+        end
+    end
+    print(self.timeStop.timer)
+    self:updateTimeStop(dt)
+
     Player:xpAnim(dt)
     Player:SetShaderTime()
-    Player:LevelUpAnim(dt)
 end
 
 function Player:draw()
@@ -296,6 +327,9 @@ function Player:addXp(amount)
             self.levelUpActive = true
             self.levelUpEffectTimer = 0
             self.levelUpTextScale = 0.5
+            if self.ui and self.ui.showLevelUp then
+                self.ui:showLevelUp()
+            end
         end
     end
 end
@@ -448,9 +482,12 @@ function Player:checkWhipHit(enemy)
 end
 
 function Player:updateTimeStop(dt)
+    if self.timeStop.level <= 0 then return end
     if self.timeStop.transitionActive then
         self.timeStop.transitionTime = self.timeStop.transitionTime + dt
-        if self.timeStop.transitionTime > self.timeStop.duration * 1.1 then
+        self.timeStop.sumTime = self.timeStop.sumTime + dt
+        GameStats.timeStopped = GameStats.timeStopped + dt
+        if self.timeStop.transitionTime > self.timeStop.duration then
             self.timeStop.transitionActive = false
         end
     end
@@ -466,6 +503,7 @@ function Player:drawTimeStopEffect(canvas)
 end
 
 function Player:activateTimeStop()
+    if self.timeStop.level <= 0 then return end
     self.timeStop.transitionTime = 0
     self.timeStop.transitionActive = true
     self.timeStop.sound:play()

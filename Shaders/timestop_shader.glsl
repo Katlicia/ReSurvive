@@ -67,8 +67,8 @@ vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords){
     vec2 p = -1.0 + 2.0 * uv;
     vec2 st = uv * vec2(aspectRatio, 1.0);
 
-    float currTime = iTime * 1.1;
-    float negativeWaveTime = 0.8;
+    float currTime = iTime;
+    float negativeWaveTime = 1.33; // 4 saniyeye oranlandı
 
     vec4 texColor = Texel(iChannel1, uv);
     vec3 base = pow(texColor.rgb, vec3(0.6));
@@ -80,10 +80,10 @@ vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords){
     float grey = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
     vec4 greyImage = vec4(grey, grey, grey, 1.0);
 
-    if (currTime > 0.0 && currTime <= 1.8) {
-        float timeSegment = easeOutCubic(clamp(currTime, 0.0, 0.9) / 0.9);
-        if (currTime > 1.1) {
-            timeSegment = 1.0 - easeInCubic(clamp(currTime - 0.9, 0.0, 0.9) / 0.9);
+    if (currTime > 0.0 && currTime <= 3.0) {
+        float timeSegment = easeOutCubic(clamp(currTime, 0.0, 1.5) / 1.5);
+        if (currTime > 1.67) {
+            timeSegment = 1.0 - easeInCubic(clamp(currTime - 1.5, 0.0, 1.5) / 1.5);
         }
         float barrel_pow = 1.0 + 0.2 * (1.0 + timeSegment);
         p = barrelDistort(p, 1.0 / barrel_pow);
@@ -94,16 +94,14 @@ vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords){
         greyImage = vec4(grey, grey, grey, 1.0);
     }
 
-    if (currTime <= 0.8) {
-        return imageFilter(st, texColor, imageNegative, clamp(currTime, 0.0, 0.8) / negativeWaveTime);
-    } else if (currTime > 0.8 && currTime <= 1.2) {
-        return imageFilter(st, imageNegative, imageNegative, clamp(currTime - 0.8, 0.0, 0.4) / 0.4);
-    } else if (currTime > 1.2 && currTime <= 1.8) {
-        return imageFilter(st, imageNegative, imageNegative, 1.0 - clamp(currTime - 1.2, 0.0, 0.6) / 0.6);
-    } else if (currTime > 1.8 && currTime <= 2.4) {
-        return imageFilter(st, greyImage, imageNegative, 1.0 - clamp(currTime - 1.8, 0.0, 0.6) / 0.6);
-    } else if (currTime > 2.4) {
-        return texColor;
+    if (currTime <= 1.33) {
+        return imageFilter(st, texColor, imageNegative, clamp(currTime, 0.0, 1.33) / negativeWaveTime);
+    } else if (currTime > 1.33 && currTime <= 2.0) {
+        return imageFilter(st, imageNegative, imageNegative, clamp(currTime - 1.33, 0.0, 0.67) / 0.67);
+    } else if (currTime > 2.0 && currTime <= 3.0) {
+        return imageFilter(st, imageNegative, imageNegative, 1.0 - clamp(currTime - 2.0, 0.0, 1.0) / 1.0);
+    } else if (currTime > 3.0 && currTime <= 4.0) {
+        return imageFilter(st, greyImage, imageNegative, 1.0 - clamp(currTime - 3.0, 0.0, 1.0) / 1.0);
     } else {
         return texColor;
     }

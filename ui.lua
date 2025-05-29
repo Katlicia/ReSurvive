@@ -14,6 +14,8 @@ function UI:new()
         sfxVolume = 0.5,
         panelYTarget = (VIRTUAL_HEIGHT / 2 - 400 / 2),
         panelYCurrent = -400,
+        levelUpItems = {},
+        levelUpActive = false
     }
 
     if not UI.buttonShader then
@@ -23,7 +25,6 @@ function UI:new()
     if not UI.sliderShader then
         UI.sliderShader = love.graphics.newShader("Shaders/slider_shader.glsl")
     end
-
 
     return setmetatable(this, UI)
 end
@@ -42,7 +43,7 @@ function UI:setState(state)
     elseif state == "paused" then
         self:createSlider("MUSIC", 110, 50, 100, 20, function(value) self.musicVolume = value music:setVolume(value) end, self.musicVolume)
         self:createSlider("SFX", 110, 90, 100, 20, function(value) self.sfxVolume = value end, self.sfxVolume)
-        self:createButton("MAIN MENU", VIRTUAL_WIDTH / 6 + 180, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.MENU; self:setState(GameState.MENU) end)
+        self:createButton("MAIN MENU", VIRTUAL_WIDTH / 6 + 180, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.MENU; self:setState(GameState.MENU) self:resetGame() end)
         self:createButton("CONTINUE", VIRTUAL_WIDTH / 6 + VIRTUAL_WIDTH - 700, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.PLAYING; self:setState(GameState.PLAYING) end)
 elseif state == "dead" then
     self.panelYCurrent = -400
@@ -66,10 +67,8 @@ elseif state == "dead" then
             end
         }
     }
-elseif state == "level" then
-    
-end
 
+end
 
 end
 
@@ -79,6 +78,8 @@ function UI:resetGame()
     EnemySpawner.orbs = {}
     EnemySpawner.timeSinceStart = 0
     GameStats:reset()
+    self.levelUpActive = false
+    self.levelUpItems = false
 end
 
 function UI:createButton(text, x, y, w, h, callback)
@@ -166,6 +167,7 @@ function UI:mousepressed(x, y)
             button.clicked = true
         end
     end
+
 end
 
 function UI:mousereleased(x, y)
@@ -180,12 +182,64 @@ function UI:mousereleased(x, y)
         button.clicked = false
         self.mouseDownIndex = nil
     end
+
+    if self.levelUpActive then
+        local panelY = (VIRTUAL_HEIGHT - 300) / 2
+        local boxWidth = 150
+        local spacing = 30
+        local totalWidth = 3 * boxWidth + 2 * spacing
+        local startX = (VIRTUAL_WIDTH - totalWidth) / 2
+        local yBox = panelY + 60
+
+        for i, item in ipairs(self.levelUpItems) do
+            local xBox = startX + (i - 1) * (boxWidth + spacing)
+            if x >= xBox and x <= xBox + boxWidth and
+            y >= yBox and y <= yBox + boxWidth then
+                if item.level < Player.maxSkillLevel then
+                    item.level = item.level + 1
+                    if item.name == "Whip" then
+                        item.cooldown = item.cooldown - item.cooldown * 5/100
+                        if item.level > 4 then
+                            item.damage = item.damage + 2.5
+                        end
+                    end
+                end
+                if item.name == "Clock" then
+                    if not self:hasWeapon(Player.timeStop) then
+                        table.insert(Player.weapons, Player.timeStop)
+                    end
+                end
+                if item.name == "Wing" then
+                    Player.speed = Player.wing.boost(Player.wing.level)
+                end
+                self.levelUpActive = false
+                self.state = GameState.PLAYING
+            end
+        end
+    end
+
 end
+
+function UI:hasWeapon(weapon)
+    for _, w in ipairs(Player.weapons) do
+        if w == weapon then
+            return true
+        end
+    end
+    return false
+end
+
 
 function UI:draw()
     if not self.visible or not self.state then return end
 
     love.graphics.setFont(self.font)
+
+
+    if self.levelUpActive then
+        self:drawLevelUpItems()
+    end
+
 
     if self.state == "menu" or self.state == "settings" then
         love.graphics.setShader()
@@ -481,7 +535,9 @@ function UI:drawGameOverStats()
         { label = "Total Kills", value = GameStats.enemiesKilled },
         { label = "Total XP", value = GameStats.xpCollected },
         { label = "Level Reached", value = Player.level },
-        { label = "Time Survived", value = string.format("%.1f sec", GameStats.timeSurvived) }
+        { label = "Time Survived", value = string.format("%.1f sec", GameStats.timeSurvived) },
+        { label = "Stopped Time", value = string.format("%.1f sec", GameStats.timeStopped) },
+        { label = "Speed Boost", value = GameStats.wingBonusPercent },
     }
 
     for _, stat in ipairs(stats) do
@@ -510,6 +566,97 @@ function UI:drawGameOverStats()
     end
 end
 
+function UI:drawLevelUpItems()
+    if not self.levelUpActive then return end
+
+    local panelWidth = 600
+    local panelHeight = 500
+    local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
+    local panelY = (VIRTUAL_HEIGHT - panelHeight) / 2
+
+    love.graphics.setColor(0, 0, 0, 0.3)
+    love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 12, 12)
+
+    love.graphics.setColor(1, 1, 1, 0.7)
+    love.graphics.printf("Choose an Upgrade", panelX, panelY + 20, panelWidth, "center")
+
+    local boxWidth = 150
+    local spacing = 30
+    local totalWidth = 3 * boxWidth + 2 * spacing
+    local startX = (VIRTUAL_WIDTH - totalWidth) / 2
+    local y = panelY + 150
+    love.graphics.setFont(self.smallFont)
+    for i, item in ipairs(self.levelUpItems) do
+        local x = startX + (i - 1) * (boxWidth + spacing)
+
+        local mx, my = love.mouse.getPosition()
+        local hovered = mx >= x and mx <= x + boxWidth and my >= y and my <= y + boxWidth
+
+        love.graphics.setColor(hovered and 0.9 or 0.3, 0.3, 0.3, 0.8)
+        love.graphics.rectangle("fill", x, y, boxWidth, boxWidth, 8, 8)
+        love.graphics.setColor(1, 1, 1)
+
+        love.graphics.draw(item.icon, x + 20, y + 20, 0, 2, 2)
+
+        love.graphics.printf(item.name .. " Level: " .. item.level, x , y - 40, 150, "center")
+
+    local descText = ""
+
+    if item.name == "Whip" then
+        descText = string.format("Lvl %d: %.0f%% cooldown reduction%s", 
+            item.level + 1, 5, 
+            item.level + 1 > 4 and "\n+2.5 damage" or ""
+        )
+    elseif item.name == "Clock" then
+        local cooldown = item.getCooldown and item:getCooldown() or 120
+        descText = string.format("Stops time.\nCooldown: %.1f sec", cooldown)
+    elseif item.name == "Wing" then
+        local boostPercent = (0.1 * (item.level + 1)) * 100
+        descText = string.format("Move faster.\n+%.0f%% speed", boostPercent)
+    else
+        descText = "Upgrade skill"
+    end
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf(descText, x, y + boxWidth + 10, boxWidth, "center")
+
+    end
+end
+
+
+function UI:showLevelUp()
+    local allItems = {}
+    for _, item in ipairs({Player.whip, Player.timeStop, Player.wing}) do
+        if item.level < Player.maxSkillLevel then
+            table.insert(allItems, item)
+        end
+    end
+
+    if #allItems == 0 then
+        return
+    end
+
+
+    local selected = {}
+    local attempts = 0
+    while #selected < 3 and attempts < 20 do
+        local item = allItems[math.random(#allItems)]
+        local alreadyIn = false
+        for _, v in ipairs(selected) do
+            if v == item then alreadyIn = true break end
+        end
+        if not alreadyIn then
+            table.insert(selected, item)
+        end
+        attempts = attempts + 1
+    end
+
+
+
+    self.levelUpItems = selected
+    self.levelUpActive = true
+    self.state = GameState.LEVEL
+end
 
 
 return UI

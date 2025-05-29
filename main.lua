@@ -24,7 +24,9 @@ GameStats = {
     enemiesKilled = 0,
     xpCollected = 0,
     enemiesByType = {},
-    timeSurvived = 0
+    timeSurvived = 0,
+    timeStopped = 0,
+    wingBonusPercent = 0
 }
 
 function GameStats:reset()
@@ -32,6 +34,8 @@ function GameStats:reset()
     self.xpCollected = 0
     self.timeSurvived = 0
     self.enemiesByType = {}
+    self.timeStopped = 0
+    self.wingBonusPercent = 0
 end
 
 function love.load()
@@ -65,7 +69,7 @@ function love.load()
         pixelperfect = true
     })
 
-    Player:load()
+    Player:load(ui)
 end
 
 function love.resize(w, h)
@@ -87,17 +91,21 @@ function love.update(dt)
         weapon.sound:setVolume(ui.sfxVolume)
     end
 
+    if ui.state == GameState.PLAYING or ui.state == GameState.LEVEL then
+        Player:LevelUpAnim(dt)
+    end
+    
     if ui.state == GameState.PLAYING then
         love.mouse.setVisible(false)
-        Player:updateTimeStop(dt)
         if not music:isPlaying() then
             music:play()
         end
+        GameStats.wingBonusPercent = Player.wing.level * 10
         camera.x = Player.x + Player.width / 2 - love.graphics.getWidth() / 2
         camera.y = Player.y + Player.height / 2 - love.graphics.getHeight() / 2
         if not Player.timeStop.transitionActive then
             EnemySpawner:update(dt, Player)
-        end 
+        end
         Player:update(dt, EnemySpawner.enemies)
         cam:lookAt(Player.x + Player.width / 2, Player.y + Player.height / 2)
         if Player.deathAnimDone and music:isPlaying() then
@@ -157,7 +165,7 @@ function love.draw()
     love.graphics.setShader()
     push:finish()
 
-    if ui.state == GameState.PLAYING and not Player.frozen then
+    if ui.state == GameState.PLAYING or ui.state == GameState.LEVEL and not Player.frozen then
         Player:drawLevelUpText()
     end
 end
@@ -184,13 +192,16 @@ function love.keypressed(key, scancode, isrepeat)
             ui:setState(GameState.PLAYING)
         end
     end
-    -- if key == "k" then
-    --     Player:takeDamage(100)
-    -- end
+    if key == "k" then
+        Player:takeDamage(100)
+    end
     if key == "m" then
         ui:setState(GameState.MENU)
     end
     if key == "t" then
         Player:activateTimeStop()
+    end
+    if key == "j" then
+        Player:addXp(20)
     end
 end
