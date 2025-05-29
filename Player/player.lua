@@ -56,7 +56,7 @@ function Player:load()
     self.xpLerpSpeed = 4
     self.xpAnimationQueue = {}
     self.displayedXp = 0
-    self.xpRadius = 100
+    self.xpRadius = 150
 
     -- Frame state
     self.frozen = false
@@ -87,6 +87,7 @@ function Player:load()
 
     -- Weapons
     self.whip = {
+        name = "Whip",
         sprite = love.graphics.newImage("Player/Assets/Sprites/slash_sheet.png"),
         spriteWidth = 288,
         spriteHeight = 48,
@@ -103,11 +104,16 @@ function Player:load()
         frameDelay = 0.1,
         width = self.height + 70,
         height = self.width / 2 + 10,
-        sound = love.audio.newSource("Player/Assets/Sounds/whip.wav", "static")
+        sound = love.audio.newSource("Player/Assets/Sounds/whip.ogg", "static")
     }
 
     self.whipQuads = {}
     self:generateWhipQuads()
+
+    self.weapons = {
+        self.whip
+    }
+    
 end
 
 function Player:update(dt, enemies)

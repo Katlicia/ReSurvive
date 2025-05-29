@@ -1,7 +1,7 @@
 local XpOrb = {}
 XpOrb.__index = XpOrb
 
-function XpOrb:new(x, y, amount)
+function XpOrb:new(x, y, amount, sound)
     local self = setmetatable({}, XpOrb)
     if not XpOrb.image then
         XpOrb.image = love.graphics.newImage("Player/Assets/Sprites/xp.png") -- veya "xp.png"
@@ -30,7 +30,7 @@ function XpOrb:new(x, y, amount)
     self.trail = {}  -- { {x, y, timeLeft}, ... }
 
 
-    self.xpSound = self.xpSound or love.audio.newSource("Player/Assets/Sounds/xpsound1.ogg", "static")
+    self.xpSound = sound
     self.xpCombo = 0
     self.xpComboTimer = 0
 
@@ -89,7 +89,7 @@ function XpOrb:update(dt, player)
     if dist < 10 then
         self.collected = true
         player:addXp(self.amount)
-                -- XP ses efekti oynat
+
         self.xpCombo = self.xpCombo + 1
         self.xpComboTimer = 0
 
@@ -97,9 +97,8 @@ function XpOrb:update(dt, player)
         self.xpSound:setPitch(pitch)
         self.xpSound:stop()
         self.xpSound:play()
-
     end
-    -- XP combo reset süresi
+
     if self.xpCombo > 0 then
         self.xpComboTimer = self.xpComboTimer + dt
         if self.xpComboTimer > 0.5 then

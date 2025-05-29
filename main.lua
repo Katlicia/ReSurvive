@@ -20,7 +20,11 @@ GameState = {
 }
 
 function love.load()
+    timeStopShader = love.graphics.newShader("Shaders/timestop_shader.glsl")
+    transitionTime = 0
+    transitionActive = false
     menuBgShader = love.graphics.newShader("Shaders/menu_background.glsl")
+    sceneCanvas = love.graphics.newCanvas(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
     ui = UI:new()
     ui:setState(GameState.MENU)
 
@@ -28,7 +32,8 @@ function love.load()
     music:setLooping(true)
     music:setVolume(0.5)
 
-    -- love.mouse.setVisible(false)
+    xpSound = love.audio.newSource("Player/Assets/Sounds/xpsound.ogg", "static")
+
     love.graphics.setDefaultFilter("nearest", "nearest")
     defaultFont = love.graphics.newFont("Assets/font/Pixeled.ttf", 16)
     love.graphics.setFont(defaultFont)
@@ -53,6 +58,14 @@ function love.resize(w, h)
 end
 
 function love.update(dt)
+    if transitionActive then
+        transitionTime = transitionTime + dt
+        if transitionTime > 4.0 then
+            transitionActive = false
+        end
+    end
+
+
     ui:update(dt)
     if ui.state == GameState.MENU  or ui.state == GameState.SETTINGS then
         menuBgShader:send("iTime", love.timer.getTime())
@@ -60,8 +73,11 @@ function love.update(dt)
     end
 
     music:setVolume(ui.musicVolume)
+    xpSound:setVolume(ui.sfxVolume) 
+    Player.whip.sound:setVolume(ui.sfxVolume)
 
     if ui.state == GameState.PLAYING then
+        love.mouse.setVisible(false)
         if not music:isPlaying() then
             music:play()
         end
@@ -70,21 +86,31 @@ function love.update(dt)
         EnemySpawner:update(dt, Player)
         Player:update(dt, EnemySpawner.enemies)
         cam:lookAt(Player.x + Player.width / 2, Player.y + Player.height / 2)
+        if Player.deathAnimDone and music:isPlaying() then
+                music:stop()
+            end
+        if Player.deathAnimDone then
+           ui:setState(GameState.DEAD)
+        end
+    else
+        love.mouse.setVisible(true)
+        if music:isPlaying() then
+            music:pause()
+        end
     end
 end
 
 function love.draw()
-    push:start()
+    love.graphics.setCanvas(sceneCanvas)
+    love.graphics.clear()
 
     if ui.state == GameState.MENU or ui.state == GameState.SETTINGS then
         love.graphics.setShader(menuBgShader)
         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
         love.graphics.setShader()
     end
-    ui:draw()
 
-    if ui.state == GameState.PLAYING then
-        -- background
+    if ui.state == GameState.PLAYING or ui.state == GameState.PAUSED then
         love.graphics.setShader(spaceShader)
         spaceShader:send("time", love.timer.getTime())
         spaceShader:send("cameraPos", {camera.x, camera.y})
@@ -94,26 +120,80 @@ function love.draw()
         love.graphics.setShader(nebulaShader)
         nebulaShader:send("time", love.timer.getTime())
         nebulaShader:send("cameraPos", {camera.x, camera.y})
-
         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
         love.graphics.setShader()
 
-        -- 3. camera and game objects
         cam:attach()
         Player:draw()
         EnemySpawner:draw()
         cam:detach()
 
-        -- 4. HUD
         Player:drawXpBar()
     end
+
+    ui:draw()
+
+    love.graphics.setCanvas()
+
+    if transitionActive then
+        love.graphics.setShader(timeStopShader)
+        timeStopShader:send("iTime", transitionTime)
+        timeStopShader:send("iChannel1", sceneCanvas)
+        timeStopShader:send("iResolution", {VIRTUAL_WIDTH, VIRTUAL_HEIGHT})
+    end
+
+    push:start()
+    love.graphics.draw(sceneCanvas, 0, 0)
+    love.graphics.setShader()
     push:finish()
-    if ui.state == GameState.PLAYING then
-        if not Player.frozen then
-            Player:drawLevelUpText()
-        end
+
+    if ui.state == GameState.PLAYING and not Player.frozen then
+        Player:drawLevelUpText()
     end
 end
+
+
+-- function love.draw()
+--     push:start()
+
+--     if ui.state == GameState.MENU or ui.state == GameState.SETTINGS then
+--         love.graphics.setShader(menuBgShader)
+--         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+--         love.graphics.setShader()
+--     end
+
+--     if ui.state == GameState.PLAYING  or ui.state == GameState.PAUSED then
+--         -- background
+--         love.graphics.setShader(spaceShader)
+--         spaceShader:send("time", love.timer.getTime())
+--         spaceShader:send("cameraPos", {camera.x, camera.y})
+--         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+--         love.graphics.setShader()
+
+--         love.graphics.setShader(nebulaShader)
+--         nebulaShader:send("time", love.timer.getTime())
+--         nebulaShader:send("cameraPos", {camera.x, camera.y})
+
+--         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+--         love.graphics.setShader()
+
+--         -- 3. camera and game objects
+--         cam:attach()
+--         Player:draw()
+--         EnemySpawner:draw()
+--         cam:detach()
+
+--         -- 4. HUD
+--         Player:drawXpBar()
+--     end
+--     ui:draw()
+--     push:finish()
+--     if ui.state == GameState.PLAYING then
+--         if not Player.frozen then
+--             Player:drawLevelUpText()
+--         end
+--     end
+-- end
 
 function love.mousereleased(x, y, button)
     if button == 1 and ui then
@@ -136,5 +216,15 @@ function love.keypressed(key, scancode, isrepeat)
         elseif ui.state == GameState.PAUSED then
             ui:setState(GameState.PLAYING)
         end
+    end
+    if key == "k" then
+        Player:takeDamage(100)
+    end
+    if key == "m" then
+        ui:setState(GameState.MENU)
+    end
+    if key == "t" then
+        transitionTime = 0
+        transitionActive = true
     end
 end

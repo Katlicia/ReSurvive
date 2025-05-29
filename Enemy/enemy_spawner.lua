@@ -46,7 +46,7 @@ function EnemySpawner:update(dt, player)
         enemy:update(dt, player)
 
         if not enemy.alive and enemy.currentAnim.status == "paused" then
-            local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue)
+            local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
             table.insert(self.orbs, orb)
             table.remove(self.enemies, i)
         end
