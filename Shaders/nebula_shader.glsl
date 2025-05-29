@@ -16,15 +16,15 @@ float fbm(vec2 p) {
 vec4 effect(vec4 color, Image tex, vec2 texCoord, vec2 screenCoord)
 {
     vec2 uv = screenCoord / love_ScreenSize.xy;
-    uv += cameraPos / 2000.0; // sabit çarpan ile etkisini sınırlıyoruz
+    uv += cameraPos / 2000.0;
 
     uv *= 3.0;
-    uv += vec2(time * 0.02, -time * 0.015); // hareket
+    uv += vec2(time * 0.02, -time * 0.015);
 
     float n = fbm(uv);
-    n = smoothstep(0.2, 0.6, n); // daha kontrollü geçiş
+    n = smoothstep(0.2, 0.6, n);
 
 
-    vec3 nebulaColor = vec3(0.4, 0.0, 0.6); // mor
-    return vec4(nebulaColor * n, n * 0.4); // hafif saydam
+    vec3 nebulaColor = vec3(0.4, 0.0, 0.6);
+    return vec4(nebulaColor * n, n * 0.4);
 }

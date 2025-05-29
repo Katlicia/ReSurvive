@@ -156,6 +156,7 @@ function Player:update(dt, enemies)
             anim.moving = true
             newRow = anim.rows.walk
         end
+        Player:whipAttack(dt, enemies)
     end
 
     -- Update animation row if moving
@@ -174,8 +175,6 @@ function Player:update(dt, enemies)
         end
     end
 
-
-    Player:whipAttack(dt, enemies)
     Player:xpAnim(dt)
     Player:SetShaderTime()
     Player:LevelUpAnim(dt)
@@ -217,15 +216,6 @@ function Player:draw()
                 love.graphics.draw(self.whip.sprite, quad, self.x + self.width, self.y - 30, 0, -sx, sy)
             end
         end
-    end
-end
-
-function love.keypressed(key, scancode, isrepeat)
-   if key == "h" then
-      Player:takeDamage(10)
-   end
-    if key == "j" then
-        Player:addXp(3)
     end
 end
 

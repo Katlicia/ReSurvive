@@ -193,7 +193,7 @@ function Enemy:init(sprite, frameW, frameH, walkFrameCount, deathFrameCount, wal
 
     self.animations = {
         walk = anim8.newAnimation(g(self.walkFrameCount, self.walkRow), 0.1),
-        death = anim8.newAnimation(g(self.deathFrameCount, self.deathRow), 0.1, "pauseAtEnd")
+        death = anim8.newAnimation(g(self.deathFrameCount, self.deathRow), 0.05, "pauseAtEnd")
     }
 
     self.currentAnim = self.animations.walk
@@ -211,12 +211,13 @@ function Enemy:update(dt, player)
         if dist > 0 then
             self.x = self.x + (dx / dist) * self.speed * dt
             self.y = self.y + (dy / dist) * self.speed * dt
-            if self.flipDirection then
-                self.direction = dx < 0 and "right" or "left"
-            else
-                self.direction = dx < 0 and "left" or "right"
+            if math.abs(dx) > 4 then
+                if self.flipDirection then
+                    self.direction = dx < 0 and "right" or "left"
+                else
+                    self.direction = dx < 0 and "left" or "right"
+                end
             end
-
         end
 
         if self:checkCollisionWithPlayer(player) then

@@ -29,6 +29,11 @@ function XpOrb:new(x, y, amount)
     self.wiggleSpeed = 10
     self.trail = {}  -- { {x, y, timeLeft}, ... }
 
+
+    self.xpSound = self.xpSound or love.audio.newSource("Player/Assets/Sounds/xpsound1.ogg", "static")
+    self.xpCombo = 0
+    self.xpComboTimer = 0
+
     return self
 end
 
@@ -84,7 +89,25 @@ function XpOrb:update(dt, player)
     if dist < 10 then
         self.collected = true
         player:addXp(self.amount)
+                -- XP ses efekti oynat
+        self.xpCombo = self.xpCombo + 1
+        self.xpComboTimer = 0
+
+        local pitch = math.min(1 + self.xpCombo * 0.05, 2.0)
+        self.xpSound:setPitch(pitch)
+        self.xpSound:stop()
+        self.xpSound:play()
+
     end
+    -- XP combo reset süresi
+    if self.xpCombo > 0 then
+        self.xpComboTimer = self.xpComboTimer + dt
+        if self.xpComboTimer > 0.5 then
+            self.xpCombo = 0
+            self.xpComboTimer = 0
+        end
+    end
+
 end
 
 function XpOrb:draw()
