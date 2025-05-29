@@ -6,6 +6,7 @@ setmetatable(Skeleton, { __index = Enemy })
 
 function Skeleton:new()
     local self = setmetatable({}, Skeleton)
+    Skeleton.__type = "Skeleton"
 
     local sprite = love.graphics.newImage("Enemy/Assets/skeleton_sheet.png")
     local frameW, frameH = 48, 48

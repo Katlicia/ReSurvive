@@ -67,7 +67,7 @@ vec4 effect(vec4 color, Image texture, vec2 texCoords, vec2 screenCoords){
     vec2 p = -1.0 + 2.0 * uv;
     vec2 st = uv * vec2(aspectRatio, 1.0);
 
-    float currTime = iTime;
+    float currTime = iTime * 1.1;
     float negativeWaveTime = 0.8;
 
     vec4 texColor = Texel(iChannel1, uv);

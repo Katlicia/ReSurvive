@@ -19,10 +19,18 @@ GameState = {
     SETTINGS = "settings"
 }
 
+GameStats = {
+    enemiesKilled = 0,
+    xpCollected = 0,
+    enemiesByType = {},
+    timeSurvived = 0
+}
+
+
 function love.load()
     timeStopShader = love.graphics.newShader("Shaders/timestop_shader.glsl")
-    transitionTime = 0
-    transitionActive = false
+    -- transitionTime = 0
+    -- transitionActive = false
     menuBgShader = love.graphics.newShader("Shaders/menu_background.glsl")
     sceneCanvas = love.graphics.newCanvas(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
     ui = UI:new()
@@ -58,13 +66,13 @@ function love.resize(w, h)
 end
 
 function love.update(dt)
-    if transitionActive then
-        transitionTime = transitionTime + dt
-        if transitionTime > 4.0 then
-            transitionActive = false
-        end
-    end
-
+    -- if Player.timeStop.transitionActive then
+    --     Player.timeStop.transitionTime = Player.timeStop.transitionTime + dt
+    --     if Player.timeStop.transitionTime > 2.0 * 1.1 then
+    --         print("sa")
+    --         Player.timeStop.transitionActive = false
+    --     end
+    -- end
 
     ui:update(dt)
     if ui.state == GameState.MENU  or ui.state == GameState.SETTINGS then
@@ -72,9 +80,14 @@ function love.update(dt)
         menuBgShader:send("iResolution", {love.graphics.getWidth(), love.graphics.getHeight(), 1.0})
     end
 
+    
     music:setVolume(ui.musicVolume)
-    xpSound:setVolume(ui.sfxVolume) 
-    Player.whip.sound:setVolume(ui.sfxVolume)
+    xpSound:setVolume(ui.sfxVolume)
+    
+    Player:updateTimeStop(dt)
+    for _, weapon in ipairs(Player.weapons) do
+        weapon.sound:setVolume(ui.sfxVolume)
+    end
 
     if ui.state == GameState.PLAYING then
         love.mouse.setVisible(false)
@@ -83,13 +96,16 @@ function love.update(dt)
         end
         camera.x = Player.x + Player.width / 2 - love.graphics.getWidth() / 2
         camera.y = Player.y + Player.height / 2 - love.graphics.getHeight() / 2
-        EnemySpawner:update(dt, Player)
+        if not Player.timeStop.transitionActive then
+            EnemySpawner:update(dt, Player)
+        end 
         Player:update(dt, EnemySpawner.enemies)
         cam:lookAt(Player.x + Player.width / 2, Player.y + Player.height / 2)
         if Player.deathAnimDone and music:isPlaying() then
                 music:stop()
             end
         if Player.deathAnimDone then
+            GameStats.timeSurvived = EnemySpawner.timeSinceStart
            ui:setState(GameState.DEAD)
         end
     else
@@ -135,12 +151,13 @@ function love.draw()
 
     love.graphics.setCanvas()
 
-    if transitionActive then
-        love.graphics.setShader(timeStopShader)
-        timeStopShader:send("iTime", transitionTime)
-        timeStopShader:send("iChannel1", sceneCanvas)
-        timeStopShader:send("iResolution", {VIRTUAL_WIDTH, VIRTUAL_HEIGHT})
-    end
+    -- if Player.timeStop.transitionActive then
+    --     love.graphics.setShader(timeStopShader)
+    --     timeStopShader:send("iTime", Player.timeStop.transitionTime)
+    --     timeStopShader:send("iChannel1", sceneCanvas)
+    --     timeStopShader:send("iResolution", {VIRTUAL_WIDTH, VIRTUAL_HEIGHT})
+    -- end
+    Player:drawTimeStopEffect(sceneCanvas)
 
     push:start()
     love.graphics.draw(sceneCanvas, 0, 0)
@@ -151,49 +168,6 @@ function love.draw()
         Player:drawLevelUpText()
     end
 end
-
-
--- function love.draw()
---     push:start()
-
---     if ui.state == GameState.MENU or ui.state == GameState.SETTINGS then
---         love.graphics.setShader(menuBgShader)
---         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
---         love.graphics.setShader()
---     end
-
---     if ui.state == GameState.PLAYING  or ui.state == GameState.PAUSED then
---         -- background
---         love.graphics.setShader(spaceShader)
---         spaceShader:send("time", love.timer.getTime())
---         spaceShader:send("cameraPos", {camera.x, camera.y})
---         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
---         love.graphics.setShader()
-
---         love.graphics.setShader(nebulaShader)
---         nebulaShader:send("time", love.timer.getTime())
---         nebulaShader:send("cameraPos", {camera.x, camera.y})
-
---         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
---         love.graphics.setShader()
-
---         -- 3. camera and game objects
---         cam:attach()
---         Player:draw()
---         EnemySpawner:draw()
---         cam:detach()
-
---         -- 4. HUD
---         Player:drawXpBar()
---     end
---     ui:draw()
---     push:finish()
---     if ui.state == GameState.PLAYING then
---         if not Player.frozen then
---             Player:drawLevelUpText()
---         end
---     end
--- end
 
 function love.mousereleased(x, y, button)
     if button == 1 and ui then
@@ -224,7 +198,6 @@ function love.keypressed(key, scancode, isrepeat)
         ui:setState(GameState.MENU)
     end
     if key == "t" then
-        transitionTime = 0
-        transitionActive = true
+        Player:activateTimeStop()
     end
 end

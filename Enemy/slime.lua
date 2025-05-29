@@ -6,6 +6,7 @@ setmetatable(Slime, { __index = Enemy })
 
 function Slime:new()
     local self = setmetatable({}, Slime)
+    Slime.__type = "Slime"
 
     local sprite = love.graphics.newImage("Enemy/Assets/slime_sheet.png")
     local frameW, frameH = 32, 25

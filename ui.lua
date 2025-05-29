@@ -42,13 +42,11 @@ function UI:setState(state)
         self:createSlider("SFX", 110, 90, 100, 20, function(value) self.sfxVolume = value end, self.sfxVolume)
         self:createButton("MAIN MENU", VIRTUAL_WIDTH / 6 + 180, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.MENU; self:setState(GameState.MENU) end)
         self:createButton("CONTINUE", VIRTUAL_WIDTH / 6 + VIRTUAL_WIDTH - 700, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.PLAYING; self:setState(GameState.PLAYING) end)
+    elseif state == "dead" then
+        -- self:createButton("MAIN MENU")
+        -- self:createButton("RESTART")
     end
 end
-
-            -- local panelWidth = VIRTUAL_WIDTH - 700
-            -- local panelHeight = VIRTUAL_HEIGHT - 300
-            -- local panelX = VIRTUAL_WIDTH / 6
-            -- local panelY = VIRTUAL_HEIGHT / 7
 
 function UI:createButton(text, x, y, w, h, callback)
     local button = {
@@ -338,11 +336,72 @@ function UI:draw()
         end
 
     elseif self.state == "dead" then
-        love.graphics.setColor(1, 0, 0)
-        love.graphics.printf("OLDUN", 0, 200, love.graphics.getWidth(), "center")
-        love.graphics.printf("R - Yeniden Başla", 0, 260, love.graphics.getWidth(), "center")
+        -- love.graphics.setColor(1, 0, 0)
+        -- love.graphics.printf("OLDUN", 0, 200, love.graphics.getWidth(), "center")
+        -- love.graphics.printf("R - Yeniden Başla", 0, 260, love.graphics.getWidth(), "center")
+        self:drawGameOverStats()
     end
 end
+
+
+function UI:drawGameOverStats()
+    local panelWidth = 500
+    local panelHeight = 400
+    local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
+    local panelY = VIRTUAL_HEIGHT / 2 - panelHeight / 2
+
+    local font = love.graphics.newFont("Assets/font/Pixeled.ttf", 20)
+    love.graphics.setFont(self.smallFont)
+
+    -- Panel
+    love.graphics.setColor(0.1, 0.1, 0.1, 0.7)
+    love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 12, 12)
+
+    love.graphics.setColor(1, 1, 1, 0.8)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 12, 12)
+
+    love.graphics.setColor(1, 0.3, 0.3)
+    love.graphics.printf("GAME OVER", panelX, panelY + 20, panelWidth, "center")
+
+    local y = panelY + 70
+    local x = panelX + 30
+    local labelOffset = 200
+    local lineHeight = 30
+
+    local stats = {
+        { label = "Total Kills", value = GameStats.enemiesKilled },
+        { label = "Total XP", value = GameStats.xpCollected },
+        { label = "Level Reached", value = Player.level },
+        { label = "Time Survived", value = string.format("%.1f sec", GameStats.timeSurvived) }
+    }
+
+    for _, stat in ipairs(stats) do
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.print(stat.label .. ":", x, y)
+
+        love.graphics.setColor(1, 1, 0.5)
+        love.graphics.print(tostring(stat.value), x + labelOffset, y)
+
+        y = y + lineHeight
+    end
+
+    y = y + 20
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.print("Kills by Type:", x, y)
+    y = y + lineHeight
+
+    for typeName, count in pairs(GameStats.enemiesByType) do
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.print(typeName .. ":", x, y)
+
+        love.graphics.setColor(1, 1, 0.5)
+        love.graphics.print(count, x + labelOffset, y)
+
+        y = y + lineHeight
+    end
+end
+
 
 
 return UI

@@ -107,6 +107,16 @@ function Player:load()
         sound = love.audio.newSource("Player/Assets/Sounds/whip.ogg", "static")
     }
 
+    self.timeStop = {
+        name = "Clock",
+        sound = love.audio.newSource("Player/Assets/Sounds/time.ogg", "static"),
+        transitionTime = 0,
+        duration = 2,
+        transitionActive = false,
+        cooldown = 120,
+        
+    }
+
     self.whipQuads = {}
     self:generateWhipQuads()
 
@@ -433,6 +443,30 @@ function Player:checkWhipHit(enemy)
            enemy.hitboxX + enemy.hitboxW > whipStartX and
            enemy.hitboxY < whipY + self.whip.height and
            enemy.hitboxY + enemy.hitboxH > whipY
+end
+
+function Player:updateTimeStop(dt)
+    if self.timeStop.transitionActive then
+        self.timeStop.transitionTime = self.timeStop.transitionTime + dt
+        if self.timeStop.transitionTime > self.timeStop.duration * 1.1 then
+            self.timeStop.transitionActive = false
+        end
+    end
+end
+
+function Player:drawTimeStopEffect(canvas)
+    if not self.timeStop.transitionActive then return end
+
+    love.graphics.setShader(timeStopShader)
+    timeStopShader:send("iTime", self.timeStop.transitionTime)
+    timeStopShader:send("iChannel1", canvas)
+    timeStopShader:send("iResolution", {VIRTUAL_WIDTH, VIRTUAL_HEIGHT})
+end
+
+function Player:activateTimeStop()
+    self.timeStop.transitionTime = 0
+    self.timeStop.transitionActive = true
+    self.timeStop.sound:play()
 end
 
 return Player

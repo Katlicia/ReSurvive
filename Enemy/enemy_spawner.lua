@@ -44,7 +44,12 @@ function EnemySpawner:update(dt, player)
     for i = #self.enemies, 1, -1 do
         local enemy = self.enemies[i]
         enemy:update(dt, player)
-
+        if not enemy.alive and not enemy.counted then
+            GameStats.enemiesKilled = GameStats.enemiesKilled + 1
+            GameStats.enemiesByType[enemy.__type or "Unknown"] = 
+                (GameStats.enemiesByType[enemy.__type or "Unknown"] or 0) + 1
+            enemy.counted = true
+        end
         if not enemy.alive and enemy.currentAnim.status == "paused" then
             local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
             table.insert(self.orbs, orb)
