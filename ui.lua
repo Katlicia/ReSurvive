@@ -12,6 +12,8 @@ function UI:new()
         mouseDownIndex = nil,
         musicVolume = 0.5,
         sfxVolume = 0.5,
+        panelYTarget = (VIRTUAL_HEIGHT / 2 - 400 / 2),
+        panelYCurrent = -400,
     }
 
     if not UI.buttonShader then
@@ -42,10 +44,41 @@ function UI:setState(state)
         self:createSlider("SFX", 110, 90, 100, 20, function(value) self.sfxVolume = value end, self.sfxVolume)
         self:createButton("MAIN MENU", VIRTUAL_WIDTH / 6 + 180, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.MENU; self:setState(GameState.MENU) end)
         self:createButton("CONTINUE", VIRTUAL_WIDTH / 6 + VIRTUAL_WIDTH - 700, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.PLAYING; self:setState(GameState.PLAYING) end)
-    elseif state == "dead" then
-        -- self:createButton("MAIN MENU")
-        -- self:createButton("RESTART")
-    end
+elseif state == "dead" then
+    self.panelYCurrent = -400
+    self.panelYTarget = (VIRTUAL_HEIGHT / 2 - 700 / 2)
+
+    self.buttonDefs = {
+        {
+            label = "MAIN MENU",
+            callback = function()
+                gameState = GameState.MENU
+                self:resetGame()
+                self:setState(GameState.MENU)
+            end
+        },
+        {
+            label = "RESTART",
+            callback = function()
+                self:resetGame()
+                self:setState(GameState.PLAYING)
+                gameState = GameState.PLAYING
+            end
+        }
+    }
+elseif state == "level" then
+    
+end
+
+
+end
+
+function UI:resetGame()
+    Player:load()
+    EnemySpawner.enemies = {}
+    EnemySpawner.orbs = {}
+    EnemySpawner.timeSinceStart = 0
+    GameStats:reset()
 end
 
 function UI:createButton(text, x, y, w, h, callback)
@@ -96,6 +129,32 @@ function UI:update(dt)
             button.onChange(ratio)
         end
     end
+
+    if self.state == GameState.DEAD then
+        local slideSpeed = 400
+        if self.panelYCurrent < self.panelYTarget then
+            self.panelYCurrent = math.min(self.panelYCurrent + slideSpeed * dt, self.panelYTarget)
+        end
+
+        local panelWidth = 500
+        local panelHeight = 700
+        local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
+        local panelY = self.panelYCurrent
+
+        local buttonWidth = 180
+        local buttonHeight = 50
+        local spacing = 40
+        local bx1 = panelX + panelWidth / 2 - buttonWidth / 2
+        local bx2 = panelX + panelWidth / 2 + spacing * 2
+        local by = panelY + panelHeight - 100
+
+        self.buttons = {}
+        if self.buttonDefs then
+            self:createButton(self.buttonDefs[1].label, bx1 + buttonWidth / 4, by, buttonWidth, buttonHeight, self.buttonDefs[1].callback)
+            self:createButton(self.buttonDefs[2].label, bx2 + buttonWidth / 2, by, buttonWidth, buttonHeight, self.buttonDefs[2].callback)
+        end
+    end
+
 end
 
 
@@ -282,6 +341,7 @@ function UI:draw()
             end
 
             love.graphics.setLineWidth(1)
+
         for i, button in ipairs(self.buttons) do
             if button.type == "slider" then
                 love.graphics.setColor(1, 1, 1)
@@ -336,24 +396,72 @@ function UI:draw()
         end
 
     elseif self.state == "dead" then
-        -- love.graphics.setColor(1, 0, 0)
-        -- love.graphics.printf("OLDUN", 0, 200, love.graphics.getWidth(), "center")
-        -- love.graphics.printf("R - Yeniden Başla", 0, 260, love.graphics.getWidth(), "center")
         self:drawGameOverStats()
+        for i, button in ipairs(self.buttons) do
+            if button.type == "slider" then
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.printf(button.label, button.x - 60, button.y -10, button.width)
+
+                love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
+                love.graphics.rectangle("fill", button.x, button.y, button.width, button.height, 8, 8)
+
+                love.graphics.setShader(UI.sliderShader)
+                UI.sliderShader:send("time", love.timer.getTime())
+                UI.sliderShader:send("resolution", {button.width, button.height})
+
+                love.graphics.setColor(0.8, 0.8, 0.2, 1)
+                love.graphics.rectangle("fill", button.x, button.y, button.width * button.value, button.height, 8, 8)
+                
+                love.graphics.setShader()
+                
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.rectangle("line", button.x, button.y, button.width, button.height, 8, 8)
+            else
+                local hovered = (i == self.hoveredIndex)
+                local clicked = (i == self.mouseDownIndex)
+
+                local scale = clicked and 0.92 or (hovered and 1.02 or 1.0)
+                local bx = button.x + button.width * (1 - scale) / 2
+                local by = button.y + button.height * (1 - scale) / 2
+                local bw = button.width * scale
+                local bh = button.height * scale
+
+                love.graphics.setShader(UI.buttonShader)
+                UI.buttonShader:send("time", love.timer.getTime())
+                UI.buttonShader:send("hovered", hovered)
+                UI.buttonShader:send("iResolution", {button.width, button.height})
+
+
+                if hovered then
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.8)
+                else
+                    love.graphics.setColor(0.2, 0.2, 0.2, 0.5)
+                end
+
+                love.graphics.rectangle("fill", bx, by, bw, bh, 8, 8)
+
+                love.graphics.setShader()
+                love.graphics.setColor(0.5, 0.5, 0.5)
+                love.graphics.rectangle("line", bx, by, bw, bh, 8, 8)
+                love.graphics.setShader()
+
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.printf(button.text, bx, by + 10, bw, "center")
+            end
+        end
     end
 end
 
 
 function UI:drawGameOverStats()
     local panelWidth = 500
-    local panelHeight = 400
+    local panelHeight = 700
     local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
-    local panelY = VIRTUAL_HEIGHT / 2 - panelHeight / 2
+    local panelY = self.panelYCurrent
 
     local font = love.graphics.newFont("Assets/font/Pixeled.ttf", 20)
     love.graphics.setFont(self.smallFont)
 
-    -- Panel
     love.graphics.setColor(0.1, 0.1, 0.1, 0.7)
     love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 12, 12)
 
@@ -361,7 +469,7 @@ function UI:drawGameOverStats()
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", panelX, panelY, panelWidth, panelHeight, 12, 12)
 
-    love.graphics.setColor(1, 0.3, 0.3)
+    love.graphics.setColor(1, 0.3, 0.3, 0.7)
     love.graphics.printf("GAME OVER", panelX, panelY + 20, panelWidth, "center")
 
     local y = panelY + 70
@@ -377,25 +485,25 @@ function UI:drawGameOverStats()
     }
 
     for _, stat in ipairs(stats) do
-        love.graphics.setColor(1, 1, 1)
+        love.graphics.setColor(1, 1, 1, 1)
         love.graphics.print(stat.label .. ":", x, y)
 
-        love.graphics.setColor(1, 1, 0.5)
+        love.graphics.setColor(1, 1, 0.5, 1)
         love.graphics.print(tostring(stat.value), x + labelOffset, y)
 
         y = y + lineHeight
     end
 
     y = y + 20
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print("Kills by Type:", x, y)
     y = y + lineHeight
 
     for typeName, count in pairs(GameStats.enemiesByType) do
-        love.graphics.setColor(1, 1, 1)
+        love.graphics.setColor(1, 1, 1, 1)
         love.graphics.print(typeName .. ":", x, y)
 
-        love.graphics.setColor(1, 1, 0.5)
+        love.graphics.setColor(1, 1, 0.5, 1)
         love.graphics.print(count, x + labelOffset, y)
 
         y = y + lineHeight

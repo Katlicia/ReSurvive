@@ -2,9 +2,12 @@ local anim8 = require "lib.anim8"
 
 local Enemy = {}
 Enemy.__index = Enemy
+Enemy._idCounter = 0
 
 function Enemy:init(sprite, frameW, frameH, walkFrameCount, deathFrameCount, walkRow, deathRow)
     self.sprite = sprite
+    Enemy._idCounter = Enemy._idCounter + 1
+    self.id = Enemy._idCounter
     sprite:setFilter("nearest", "nearest")
     self.frameW = frameW
     self.frameH = frameH
@@ -17,6 +20,10 @@ function Enemy:init(sprite, frameW, frameH, walkFrameCount, deathFrameCount, wal
     self.x = math.random(0, VIRTUAL_WIDTH)
     self.y = math.random(0, VIRTUAL_HEIGHT)
     self.pendingDeath = false
+    self.hitShader = love.graphics.newShader("Shaders/enemy_hit_shader.glsl")
+    self.hitFlashTimer = 0
+    self.hitFlashDuration = 0.2
+
 
     -- Enemy stats
     self.speed = 60
@@ -47,7 +54,13 @@ function Enemy:update(dt, player)
             self.pendingDeath = false
             self:die()
         end
-        
+        if self.hitFlashTimer > 0 then
+            self.hitFlashTimer = self.hitFlashTimer - dt
+            if self.hitFlashTimer < 0 then
+                self.hitFlashTimer = 0
+            end
+        end
+
         self.currentAnim:update(dt)
 
         self:updateHitbox()
@@ -76,11 +89,19 @@ end
 
 
 function Enemy:draw()
+
+    local shader = nil
+    if self.hitFlashTimer > 0 then
+        shader = self.hitShader
+        shader:send("hitAmount", self.hitFlashTimer / self.hitFlashDuration)
+        love.graphics.setShader(shader)
+    end
     local sx = (self.direction == "left") and -self.scale or self.scale
     local ox = self.frameW / 2
     local oy = self.frameH / 2
 
     self.currentAnim:draw(self.sprite, self.x, self.y, 0, sx, self.scale, ox, oy)
+    love.graphics.setShader()
 end
 
 function Enemy:checkCollisionWithPlayer(player)
@@ -97,6 +118,7 @@ function Enemy:takeDamage(amount)
     if not self.alive then return end
 
     self.hp = self.hp - amount
+    self.hitFlashTimer = self.hitFlashDuration
     if self.hp <= 0 then
         self.hp = 0
         if Player.timeStop.transitionActive then

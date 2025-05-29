@@ -16,7 +16,8 @@ GameState = {
     PLAYING = "playing",
     PAUSED = "paused",
     DEAD = "dead",
-    SETTINGS = "settings"
+    SETTINGS = "settings",
+    LEVEL = "level"
 }
 
 GameStats = {
@@ -26,6 +27,12 @@ GameStats = {
     timeSurvived = 0
 }
 
+function GameStats:reset()
+    self.enemiesKilled = 0
+    self.xpCollected = 0
+    self.timeSurvived = 0
+    self.enemiesByType = {}
+end
 
 function love.load()
     timeStopShader = love.graphics.newShader("Shaders/timestop_shader.glsl")
@@ -66,14 +73,6 @@ function love.resize(w, h)
 end
 
 function love.update(dt)
-    -- if Player.timeStop.transitionActive then
-    --     Player.timeStop.transitionTime = Player.timeStop.transitionTime + dt
-    --     if Player.timeStop.transitionTime > 2.0 * 1.1 then
-    --         print("sa")
-    --         Player.timeStop.transitionActive = false
-    --     end
-    -- end
-
     ui:update(dt)
     if ui.state == GameState.MENU  or ui.state == GameState.SETTINGS then
         menuBgShader:send("iTime", love.timer.getTime())
@@ -84,13 +83,13 @@ function love.update(dt)
     music:setVolume(ui.musicVolume)
     xpSound:setVolume(ui.sfxVolume)
     
-    Player:updateTimeStop(dt)
     for _, weapon in ipairs(Player.weapons) do
         weapon.sound:setVolume(ui.sfxVolume)
     end
 
     if ui.state == GameState.PLAYING then
         love.mouse.setVisible(false)
+        Player:updateTimeStop(dt)
         if not music:isPlaying() then
             music:play()
         end
@@ -126,7 +125,7 @@ function love.draw()
         love.graphics.setShader()
     end
 
-    if ui.state == GameState.PLAYING or ui.state == GameState.PAUSED then
+    if ui.state ~= GameState.MENU and ui.state ~= GameState.SETTINGS then
         love.graphics.setShader(spaceShader)
         spaceShader:send("time", love.timer.getTime())
         spaceShader:send("cameraPos", {camera.x, camera.y})
@@ -151,12 +150,6 @@ function love.draw()
 
     love.graphics.setCanvas()
 
-    -- if Player.timeStop.transitionActive then
-    --     love.graphics.setShader(timeStopShader)
-    --     timeStopShader:send("iTime", Player.timeStop.transitionTime)
-    --     timeStopShader:send("iChannel1", sceneCanvas)
-    --     timeStopShader:send("iResolution", {VIRTUAL_WIDTH, VIRTUAL_HEIGHT})
-    -- end
     Player:drawTimeStopEffect(sceneCanvas)
 
     push:start()
@@ -191,9 +184,9 @@ function love.keypressed(key, scancode, isrepeat)
             ui:setState(GameState.PLAYING)
         end
     end
-    if key == "k" then
-        Player:takeDamage(100)
-    end
+    -- if key == "k" then
+    --     Player:takeDamage(100)
+    -- end
     if key == "m" then
         ui:setState(GameState.MENU)
     end

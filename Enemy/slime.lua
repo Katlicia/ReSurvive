@@ -13,7 +13,7 @@ function Slime:new()
 
     Enemy.init(self, sprite, frameW, frameH, '1-8', '1-5', 1, 3)
 
-    -- Skeleton stats
+    -- Slime stats
     self.speed = 60
     self.hp = 5
     self.damage = 0.02

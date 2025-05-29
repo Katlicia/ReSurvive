@@ -88,7 +88,7 @@ function XpOrb:update(dt, player)
 
     if dist < 10 then
         self.collected = true
-        GameStats.xpCollected = GameStats.xpCollected + self.value
+        GameStats.xpCollected = GameStats.xpCollected + self.amount
         player:addXp(self.amount)
 
         self.xpCombo = self.xpCombo + 1

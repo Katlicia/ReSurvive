@@ -104,7 +104,8 @@ function Player:load()
         frameDelay = 0.1,
         width = self.height + 70,
         height = self.width / 2 + 10,
-        sound = love.audio.newSource("Player/Assets/Sounds/whip.ogg", "static")
+        sound = love.audio.newSource("Player/Assets/Sounds/whip.ogg", "static"),
+        hasHitEnemies = {}
     }
 
     self.timeStop = {
@@ -114,7 +115,6 @@ function Player:load()
         duration = 2,
         transitionActive = false,
         cooldown = 120,
-        
     }
 
     self.whipQuads = {}
@@ -410,6 +410,7 @@ function Player:whipAttack(dt, enemies)
         self.whip.sound:play()
         self.whip.timer = 0
         self.whip.visibleTimer = 0
+        self.whip.hasHitEnemies = {}
     end
 
     if self.whip.visibleTimer >= 1 then
@@ -418,10 +419,11 @@ function Player:whipAttack(dt, enemies)
         self.whip.animTimer = 0
     end
 
-    if self.whip.attack then
+    if self.whip.attack and self.whip.currentFrame == 1 then
         for _, enemy in ipairs(enemies) do
-            if self:checkWhipHit(enemy) then
+            if self:checkWhipHit(enemy) and not self.whip.hasHitEnemies[enemy] then
                 enemy:takeDamage(self.whip.damage)
+                self.whip.hasHitEnemies[enemy] = true
             end
         end
     end
