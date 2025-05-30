@@ -48,6 +48,9 @@ function love.load()
     music = love.audio.newSource("Assets/music/out_of_body.mp3", "stream")
     music:setLooping(true)
     music:setVolume(0.5)
+    menuMusic = love.audio.newSource("Assets/music/out_of_what.mp3", "stream")
+    menuMusic:setLooping(true)
+    menuMusic:setVolume(0.5)
 
     xpSound = love.audio.newSource("Player/Assets/Sounds/xpsound.ogg", "static")
 
@@ -77,14 +80,19 @@ end
 function love.update(dt)
     ui:update(dt)
     if ui.state == GameState.MENU  or ui.state == GameState.SETTINGS then
+        if not menuMusic:isPlaying() then
+            menuMusic:play()
+        end
         menuBgShader:send("iTime", love.timer.getTime())
         menuBgShader:send("iResolution", {love.graphics.getWidth(), love.graphics.getHeight(), 1.0})
     end
 
     
     music:setVolume(ui.musicVolume)
+    menuMusic:setVolume(ui.musicVolume)
     xpSound:setVolume(ui.sfxVolume)
     Player.guardianAngel.sound:setVolume(ui.sfxVolume)
+    Player.hitSound:setVolume(ui.sfxVolume)
 
     for _, weapon in ipairs(Player.weapons) do
         weapon.sound:setVolume(ui.sfxVolume)
@@ -95,6 +103,9 @@ function love.update(dt)
     end
     
     if ui.state == GameState.PLAYING then
+        if menuMusic:isPlaying() then
+            menuMusic:stop()
+        end
         love.mouse.setVisible(false)
         if not music:isPlaying() then
             music:play()

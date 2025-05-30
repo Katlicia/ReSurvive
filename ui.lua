@@ -204,7 +204,7 @@ function UI:mousereleased(x, y)
                         end
                     end
                 end
-                if item.name == "Clock" then
+                if item.name == "Witch's Clock" then
                     if not self:hasWeapon(Player.timeStop) then
                         table.insert(Player.weapons, Player.timeStop)
                     end
@@ -226,13 +226,12 @@ end
 
 function UI:hasWeapon(weapon)
     for _, w in ipairs(Player.weapons) do
-        if w == weapon then
+        if w.name == weapon.name then
             return true
         end
     end
     return false
 end
-
 
 function UI:draw()
     if not self.visible or not self.state then return end
@@ -346,9 +345,15 @@ function UI:draw()
             local weaponStats = {}
 
             for _, weapon in ipairs(Player.weapons) do
-                if weapon.name and weapon.damage and weapon.cooldown then
-                    table.insert(weaponStats, { label = weapon.name .. " Damage", value = weapon.damage })
-                    table.insert(weaponStats, { label = weapon.name .. " Cooldown", value = string.format("%.1f", weapon.cooldown) })
+                if weapon.name then
+                    if weapon.damage then
+                        table.insert(weaponStats, { label = weapon.name .. " Damage", value = weapon.damage })
+                    end
+                    if weapon.getCooldown then
+                        table.insert(weaponStats, { label = weapon.name .. " Cooldown", value = string.format("%.1f", weapon:getCooldown()) })
+                    elseif weapon.cooldown then
+                        table.insert(weaponStats, { label = weapon.name .. " Cooldown", value = string.format("%.1f", weapon.cooldown) })
+                    end
                 end
             end
 
@@ -388,6 +393,7 @@ function UI:draw()
                 y = y + 10
 
                 for _, stat in ipairs(weaponStats) do
+                    -- print(stat.label)
                     love.graphics.setColor(1, 1, 1)
                     love.graphics.print(stat.label .. ":", x, y)
 
@@ -617,7 +623,7 @@ function UI:drawLevelUpItems()
                 table.insert(colorLines, {text = "+2.5 Damage", color = {1, 0.2, 0.2}})
             end
 
-        elseif item.name == "Clock" then
+        elseif item.name == "Witch's Clock" then
             if item.level == 0 then
                 table.insert(colorLines, {text = "Stops time.", color = {1, 1, 1}})
             end

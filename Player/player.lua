@@ -24,6 +24,8 @@ function Player:load(uiRef)
     auraShader = love.graphics.newShader("Shaders/aura_shader.glsl")
 
     levelShader = love.graphics.newShader("Shaders/level_text_shader.glsl")
+
+    self.hitShader = love.graphics.newShader("Shaders/player_hit_shader.glsl")
     
     -- Level up effects
     self.levelUpEffectTimer = 0
@@ -35,6 +37,10 @@ function Player:load(uiRef)
 
     self.sprite = love.graphics.newImage("Player/Assets/Sprites/playersheet.png")
     self.auraImage = love.graphics.newImage("Player/Assets/Sprites/aura.png")
+
+    self.hitFlashDuration = 0.3
+    self.hitFlashTimer = 0
+
     
     -- Player dimensions
     self.x = 1920 / 2 - 64
@@ -63,6 +69,9 @@ function Player:load(uiRef)
 
     -- Frame state
     self.frozen = false
+
+    self.hitSound = love.audio.newSource("Player/Assets/Sounds/hit.ogg", "static")
+    self.hitSound:setLooping(true)
 
     anim = {
         spriteWidth = 512,
@@ -114,7 +123,7 @@ function Player:load(uiRef)
     }
 
     self.timeStop = {
-        name = "Clock",
+        name = "Witch's Clock",
         icon = love.graphics.newImage("Player/Assets/Sprites/timestop-icon.png"),
         level = 0,
         sound = love.audio.newSource("Player/Assets/Sounds/time.ogg", "static"),
@@ -123,13 +132,13 @@ function Player:load(uiRef)
         sumTime = 0,
         duration = 4,
         transitionActive = false,
-        baseCooldown = 120,
+        cooldown = 120,
         getCooldown = function(self)
             if self.level == 0 then
-                return self.baseCooldown
+                return self.cooldown
             end
             local reductionFactor = 1 - (self.level - 1) * 0.10
-            return math.max(40, self.baseCooldown * reductionFactor)
+            return math.max(40, self.cooldown * reductionFactor)
         end
     }
 
@@ -260,12 +269,23 @@ function Player:update(dt, enemies)
             self.guardianAngel.reviveEffectActive = false
         end
     end
-
+    
     Player:xpAnim(dt)
     Player:SetShaderTime()
+
+    if self.hitFlashTimer > 0 then
+        self.hitFlashTimer = self.hitFlashTimer - dt
+        if self.hitFlashTimer < 0 then self.hitFlashTimer = 0 end
+    end
+
+    if self.hitFlashTimer <= 0 and self.hitSound:isPlaying() then
+        self.hitSound:stop()
+    end
+
 end
 
 function Player:draw()
+    print(self.timeStop.timer)
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
 
@@ -273,6 +293,13 @@ function Player:draw()
         love.graphics.setShader(self.guardianAngel.reviveShader)
         self.guardianAngel.reviveShader:send("time", love.timer.getTime())
         self.guardianAngel.reviveShader:send("color", self.guardianAngel.reviveColor)
+    else
+        love.graphics.setShader()
+    end
+
+    if self.hitFlashTimer > 0 then
+        self.hitShader:send("hitAmount", self.hitFlashTimer / self.hitFlashDuration)
+        love.graphics.setShader(self.hitShader)
     else
         love.graphics.setShader()
     end
@@ -296,9 +323,6 @@ function Player:draw()
             local auraH = self.auraImage:getHeight() * scale
 
             love.graphics.draw(self.auraImage, cx - auraW / 2, cy - auraH / 2, 0, scale, scale)
-
-        else
-            love.graphics.setShader()
         end
         love.graphics.draw(self.sprite, self.quads[anim.currentFrame], self.x, self.y, 0, scaleX, 2, originX, 0)
         self:drawHpBar()
@@ -354,20 +378,28 @@ end
 
 function Player:takeDamage(amount)
     if not self.alive then return end
+    if self.guardianAngel.reviveEffectActive then return end
 
-    if self.guardianAngel.reviveEffectActive then
-        return
+    local prevHp = self.hp
+    self.hp = math.max(self.hp - amount, 0)
+
+    if self.hp < prevHp then
+        self.hitSound:play()
     end
-	self.hp = math.max(self.hp - amount, 0)
-	if self.hp <= 0 then
-		self.hp = 0
-		self.alive = false
+
+    self.hitFlashTimer = self.hitFlashDuration
+
+    if self.hp <= 0 then
+        self.hitSound:stop()
+        self.hp = 0
+        self.alive = false
         self.playingDeathAnim = true
         self.deathAnimDone = false
         self:generateQuads(anim.rows.death)
         anim.currentFrame = 1
-	end
+    end
 end
+
 
 function Player:addXp(amount)
     local xpToAdd = amount

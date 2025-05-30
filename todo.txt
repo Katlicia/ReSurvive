@@ -1,0 +1,5 @@
+Pause ekranına statları ekle.
+Yıldırım büyüsü ekle.
+Clock zamanını güncellemiyor, basecd kalıyor.
+Shader ile yağmur ekle, rastgele yağsın yağmur sesi çal.
+
