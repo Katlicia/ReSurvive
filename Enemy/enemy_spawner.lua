@@ -1,5 +1,6 @@
 local Slime = require("Enemy/slime")
 local Skeleton = require("Enemy/skeleton")
+local Boss = require("Enemy/boss")
 local XpOrb = require("Player/xp_orb")
 
 
@@ -17,7 +18,8 @@ EnemySpawner.spawnTimer = 0
 
 EnemySpawner.enemyTypes = {
     { class = Slime, unlockTime = 0 },
-    { class = Skeleton, unlockTime = 20 }
+    { class = Skeleton, unlockTime = 20 },
+    -- { class = Boss, unlockTime = 10 }
 }
 
 function EnemySpawner:update(dt, player)

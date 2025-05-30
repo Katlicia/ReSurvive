@@ -40,8 +40,6 @@ end
 
 function love.load()
     timeStopShader = love.graphics.newShader("Shaders/timestop_shader.glsl")
-    -- transitionTime = 0
-    -- transitionActive = false
     menuBgShader = love.graphics.newShader("Shaders/menu_background.glsl")
     sceneCanvas = love.graphics.newCanvas(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
     ui = UI:new()
@@ -54,7 +52,7 @@ function love.load()
     xpSound = love.audio.newSource("Player/Assets/Sounds/xpsound.ogg", "static")
 
     love.graphics.setDefaultFilter("nearest", "nearest")
-    defaultFont = love.graphics.newFont("Assets/font/Pixeled.ttf", 16)
+    defaultFont = love.graphics.newFont("Assets/font/pixelfont.ttf", 32)
     love.graphics.setFont(defaultFont)
     spaceShader = love.graphics.newShader("Shaders/space_shader.glsl")
     nebulaShader = love.graphics.newShader("Shaders/nebula_shader.glsl")
@@ -131,6 +129,7 @@ function love.draw()
         love.graphics.setShader(menuBgShader)
         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
         love.graphics.setShader()
+        music:stop()
     end
 
     if ui.state ~= GameState.MENU and ui.state ~= GameState.SETTINGS then
@@ -204,4 +203,8 @@ function love.keypressed(key, scancode, isrepeat)
     if key == "j" then
         Player:addXp(20)
     end
+    if key == "r" then
+        Player.guardianAngel.level = 1
+    end
+
 end

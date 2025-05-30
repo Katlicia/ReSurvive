@@ -3,8 +3,8 @@ UI.__index = UI
 
 function UI:new()
     local this = {
-        font = love.graphics.newFont("Assets/font/Pixeled.ttf", 32),
-        smallFont = love.graphics.newFont("Assets/font/Pixeled.ttf", 12),
+        font = love.graphics.newFont("Assets/font/pixelfont.ttf", 40),
+        smallFont = love.graphics.newFont("Assets/font/pixelfont.ttf", 20),
         state = nil,
         visible = true,
         buttons = {},
@@ -41,10 +41,10 @@ function UI:setState(state)
         self:createSlider("SFX Volume", VIRTUAL_WIDTH / 2 - 150, VIRTUAL_HEIGHT / 2, 400, 40, function(value) self.sfxVolume = value end, self.sfxVolume)
         self:createButton("MAIN MENU", VIRTUAL_WIDTH / 2 , VIRTUAL_HEIGHT / 2 + 100, 300, 150, function() self:setState(GameState.MENU) end)
     elseif state == "paused" then
-        self:createSlider("MUSIC", 110, 50, 100, 20, function(value) self.musicVolume = value music:setVolume(value) end, self.musicVolume)
-        self:createSlider("SFX", 110, 90, 100, 20, function(value) self.sfxVolume = value end, self.sfxVolume)
-        self:createButton("MAIN MENU", VIRTUAL_WIDTH / 6 + 180, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.MENU; self:setState(GameState.MENU) self:resetGame() end)
-        self:createButton("CONTINUE", VIRTUAL_WIDTH / 6 + VIRTUAL_WIDTH - 700, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 120, 50, function() gameState = GameState.PLAYING; self:setState(GameState.PLAYING) end)
+        self:createSlider("MUSIC", 120, 70, 100, 20, function(value) self.musicVolume = value music:setVolume(value) end, self.musicVolume)
+        self:createSlider("SFX", 120, 110, 100, 20, function(value) self.sfxVolume = value end, self.sfxVolume)
+        self:createButton("MAIN MENU", VIRTUAL_WIDTH / 6 + 180, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 140, 50, function() gameState = GameState.MENU; self:setState(GameState.MENU) self:resetGame() end)
+        self:createButton("CONTINUE", VIRTUAL_WIDTH / 6 + VIRTUAL_WIDTH - 720, VIRTUAL_HEIGHT / 7 + VIRTUAL_HEIGHT - 380, 140, 50, function() gameState = GameState.PLAYING; self:setState(GameState.PLAYING) end)
 elseif state == "dead" then
     self.panelYCurrent = -400
     self.panelYTarget = (VIRTUAL_HEIGHT / 2 - 700 / 2)
@@ -73,13 +73,13 @@ end
 end
 
 function UI:resetGame()
-    Player:load()
+    Player:load(self)
     EnemySpawner.enemies = {}
     EnemySpawner.orbs = {}
     EnemySpawner.timeSinceStart = 0
     GameStats:reset()
     self.levelUpActive = false
-    self.levelUpItems = false
+    self.levelUpItems = {}
 end
 
 function UI:createButton(text, x, y, w, h, callback)
@@ -209,9 +209,13 @@ function UI:mousereleased(x, y)
                         table.insert(Player.weapons, Player.timeStop)
                     end
                 end
-                if item.name == "Wing" then
+                if item.name == "Boots" then
                     Player.speed = Player.wing.boost(Player.wing.level)
                 end
+                if item.name == "Guardian Angel" then
+                    Player.guardianAngel.addedToUI = true
+                end
+
                 self.levelUpActive = false
                 self.state = GameState.PLAYING
             end
@@ -246,9 +250,9 @@ function UI:draw()
         love.graphics.setColor(1, 1, 1)
 
         if self.state == "menu" then
-            love.graphics.printf("Re Survive", 0, 150, VIRTUAL_WIDTH, "center")
+            love.graphics.printf("RE:SURVIVE", 0, 150, VIRTUAL_WIDTH, "center")
         elseif self.state == "settings" then
-            love.graphics.printf("SETTINGS", 0, 150, VIRTUAL_WIDTH, "center")
+            love.graphics.printf("SETTINGS", 0, 300, VIRTUAL_WIDTH, "center")
             local panelWidth = 500
             local panelHeight = 40*13
             local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
@@ -267,7 +271,7 @@ function UI:draw()
         for i, button in ipairs(self.buttons) do
             if button.type == "slider" then
                 love.graphics.setColor(1, 1, 1)
-                love.graphics.printf(button.label, button.x, button.y - 80, button.width, "center")
+                love.graphics.printf(button.label, button.x, button.y - 50, button.width, "center")
 
                 love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
                 love.graphics.rectangle("fill", button.x, button.y, button.width, button.height, 8, 8)
@@ -313,7 +317,7 @@ function UI:draw()
                 love.graphics.setShader()
 
                 love.graphics.setColor(1, 1, 1)
-                love.graphics.printf(button.text, bx, by + 10, bw, "center")
+                love.graphics.printf(button.text, bx, by + 50, bw, "center")
             end
         end
 
@@ -399,7 +403,7 @@ function UI:draw()
         for i, button in ipairs(self.buttons) do
             if button.type == "slider" then
                 love.graphics.setColor(1, 1, 1)
-                love.graphics.printf(button.label, button.x - 60, button.y -10, button.width)
+                love.graphics.printf(button.label, button.x - 70, button.y+2 , button.width)
 
                 love.graphics.setColor(0.2, 0.2, 0.2, 0.8)
                 love.graphics.rectangle("fill", button.x, button.y, button.width, button.height, 8, 8)
@@ -502,7 +506,7 @@ function UI:draw()
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.printf(button.text, bx, by + 10, bw, "center")
             end
-        end
+        end 
     end
 end
 
@@ -513,7 +517,7 @@ function UI:drawGameOverStats()
     local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
     local panelY = self.panelYCurrent
 
-    local font = love.graphics.newFont("Assets/font/Pixeled.ttf", 20)
+    local font = love.graphics.newFont("Assets/font/pixelfont.ttf", 40)
     love.graphics.setFont(self.smallFont)
 
     love.graphics.setColor(0.1, 0.1, 0.1, 0.7)
@@ -569,64 +573,92 @@ end
 function UI:drawLevelUpItems()
     if not self.levelUpActive then return end
 
-    local panelWidth = 600
-    local panelHeight = 500
+    local panelWidth = 700
+    local panelHeight = 600
     local panelX = (VIRTUAL_WIDTH - panelWidth) / 2
     local panelY = (VIRTUAL_HEIGHT - panelHeight) / 2
 
     love.graphics.setColor(0, 0, 0, 0.3)
     love.graphics.rectangle("fill", panelX, panelY, panelWidth, panelHeight, 12, 12)
 
-    love.graphics.setColor(1, 1, 1, 0.7)
-    love.graphics.printf("Choose an Upgrade", panelX, panelY + 20, panelWidth, "center")
+    love.graphics.setColor(1, 1, 1, 0.9)
+    love.graphics.setFont(self.font)
+    love.graphics.printf("Choose an Upgrade", panelX, panelY + 30, panelWidth, "center")
 
-    local boxWidth = 150
-    local spacing = 30
+    local boxWidth = 180
+    local spacing = 60
     local totalWidth = 3 * boxWidth + 2 * spacing
     local startX = (VIRTUAL_WIDTH - totalWidth) / 2
     local y = panelY + 150
+
     love.graphics.setFont(self.smallFont)
+
     for i, item in ipairs(self.levelUpItems) do
         local x = startX + (i - 1) * (boxWidth + spacing)
 
         local mx, my = love.mouse.getPosition()
         local hovered = mx >= x and mx <= x + boxWidth and my >= y and my <= y + boxWidth
 
-        love.graphics.setColor(hovered and 0.9 or 0.3, 0.3, 0.3, 0.8)
-        love.graphics.rectangle("fill", x, y, boxWidth, boxWidth, 8, 8)
+        love.graphics.setColor(hovered and 1 or 0.3, 0.3, 0.3, 0.85)
+        love.graphics.rectangle("fill", x, y, boxWidth, boxWidth, 12, 12)
         love.graphics.setColor(1, 1, 1)
 
-        love.graphics.draw(item.icon, x + 20, y + 20, 0, 2, 2)
+        love.graphics.draw(item.icon, x + 20, y + 20, 0, 2.2, 2.2)
 
-        love.graphics.printf(item.name .. " Level: " .. item.level, x , y - 40, 150, "center")
+        love.graphics.setFont(self.smallFont)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf(item.name .. " Lv. " .. item.level, x , y - 40, boxWidth, "center")
 
-    local descText = ""
+        local colorLines = {}
 
-    if item.name == "Whip" then
-        descText = string.format("Lvl %d: %.0f%% cooldown reduction%s", 
-            item.level + 1, 5, 
-            item.level + 1 > 4 and "\n+2.5 damage" or ""
-        )
-    elseif item.name == "Clock" then
-        local cooldown = item.getCooldown and item:getCooldown() or 120
-        descText = string.format("Stops time.\nCooldown: %.1f sec", cooldown)
-    elseif item.name == "Wing" then
-        local boostPercent = (0.1 * (item.level + 1)) * 100
-        descText = string.format("Move faster.\n+%.0f%% speed", boostPercent)
-    else
-        descText = "Upgrade skill"
+        if item.name == "Whip" then
+            table.insert(colorLines, {text = "Cooldown: -5%", color = {0.2, 0.6, 1}})
+            if item.level + 1 > 4 then
+                table.insert(colorLines, {text = "+2.5 Damage", color = {1, 0.2, 0.2}})
+            end
+
+        elseif item.name == "Clock" then
+            if item.level == 0 then
+                table.insert(colorLines, {text = "Stops time.", color = {1, 1, 1}})
+            end
+            local cooldown = item.getCooldown and item:getCooldown() or 120
+            table.insert(colorLines, {text = string.format("Cooldown: %.1f sec", cooldown), color = {0.2, 0.6, 1}})
+
+        elseif item.name == "Boots" then
+            if item.level == 0 then
+                table.insert(colorLines, {text = "Increases speed.", color = {1, 1, 1}})
+            end
+            local boostPercent = (0.1 * (item.level + 1)) * 100
+            table.insert(colorLines, {text = string.format("+%.0f%% Speed", boostPercent), color = {0.2, 1.0, 0.2}})
+
+
+        elseif item.name == "Guardian Angel" then
+            table.insert(colorLines, {text = "Revive once on death.", color = {1, 1, 1}})
+            table.insert(colorLines, {text = "One-time passive.", color = {1, 0, 1}})
+
+        else
+            table.insert(colorLines, {text = "Upgrade skill", color = {1, 1, 1}})
+        end
+
+        local lineY = y + boxWidth + 10
+        for _, line in ipairs(colorLines) do
+            love.graphics.setColor(line.color)
+            love.graphics.printf(line.text, x, lineY, boxWidth, "center")
+            lineY = lineY + 40
+        end
     end
-
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf(descText, x, y + boxWidth + 10, boxWidth, "center")
-
-    end
 end
-
 
 function UI:showLevelUp()
     local allItems = {}
-    for _, item in ipairs({Player.whip, Player.timeStop, Player.wing}) do
+    local baseItems = {Player.whip, Player.timeStop, Player.wing}
+
+    if Player.guardianAngel.level == 0 and not Player.guardianAngel.addedToUI then
+        table.insert(baseItems, Player.guardianAngel)
+    end
+
+    for _, item in ipairs(baseItems) do
         if item.level < Player.maxSkillLevel then
             table.insert(allItems, item)
         end

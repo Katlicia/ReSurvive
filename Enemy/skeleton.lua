@@ -17,7 +17,7 @@ function Skeleton:new()
     self.speed = 80
     self.hp = 10
     self.damage = 0.05
-    self.xpValue = 5
+    self.xpValue = 10
 
     self.scale = 2
 

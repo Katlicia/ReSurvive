@@ -123,15 +123,18 @@ function Player:load(uiRef)
         sumTime = 0,
         duration = 4,
         transitionActive = false,
-        baseCooldown = 10,
+        baseCooldown = 120,
         getCooldown = function(self)
-            local reductionFactor = 1 - (self.level - 1) * 0.15
-            return math.max(10, self.baseCooldown * reductionFactor) -- min. 20 sn
+            if self.level == 0 then
+                return self.baseCooldown
+            end
+            local reductionFactor = 1 - (self.level - 1) * 0.10
+            return math.max(40, self.baseCooldown * reductionFactor)
         end
     }
 
     self.wing = {
-        name = "Wing",
+        name = "Boots",
         icon = love.graphics.newImage("Player/Assets/Sprites/wing-icon.png"),
         level = 0,
         boost = function(level)
@@ -146,6 +149,18 @@ function Player:load(uiRef)
         self.whip
     }
     
+    self.guardianAngel = {
+        name = "Guardian Angel",
+        icon = love.graphics.newImage("Player/Assets/Sprites/xp.png"),
+        level = 0,
+        used = false,
+        addedToUI = false,
+        reviveEffectDuration = 2.0,
+        reviveEffectTimer = 0,
+        reviveEffectActive = false,
+        reviveShader = love.graphics.newShader("Shaders/revive_shader.glsl"),
+        reviveColor = {1.0, 1.0, 1.0, 1.0}
+    }
 end
 
 function Player:update(dt, enemies)
@@ -158,9 +173,23 @@ function Player:update(dt, enemies)
             if anim.currentFrame < anim.totalFrames then
                 anim.currentFrame = anim.currentFrame + 1
             else
-                self.playingDeathAnim = false
-                self.deathAnimDone = true
-                self.frozen = true
+                if self.guardianAngel.level > 0 and not self.guardianAngel.used then
+                    self.guardianAngel.used = true
+                    self.alive = true
+                    self.hp = self.maxHp
+                    self.playingDeathAnim = false
+                    self.deathAnimDone = false
+                    self.frozen = false
+                    self.guardianAngel.reviveEffectActive = true
+                    self.guardianAngel.reviveEffectTimer = 0
+                    self:generateQuads(anim.rows.idle)
+                    anim.currentFrame = 1
+                    anim.timer = 0
+                else
+                    self.playingDeathAnim = false
+                    self.deathAnimDone = true
+                    self.frozen = true
+                end
             end
         elseif not self.frozen then
             anim.currentFrame = anim.currentFrame % anim.totalFrames + 1
@@ -220,8 +249,15 @@ function Player:update(dt, enemies)
             self.timeStop.timer = 0
         end
     end
-    print(self.timeStop.timer)
+
+
     self:updateTimeStop(dt)
+    if self.guardianAngel.reviveEffectActive then
+        self.guardianAngel.reviveEffectTimer = self.guardianAngel.reviveEffectTimer + dt
+        if self.guardianAngel.reviveEffectTimer >= self.guardianAngel.reviveEffectDuration then
+            self.guardianAngel.reviveEffectActive = false
+        end
+    end
 
     Player:xpAnim(dt)
     Player:SetShaderTime()
@@ -230,8 +266,23 @@ end
 function Player:draw()
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
+
+    if self.guardianAngel.reviveEffectActive then
+        love.graphics.setShader(self.guardianAngel.reviveShader)
+        self.guardianAngel.reviveShader:send("time", love.timer.getTime())
+        self.guardianAngel.reviveShader:send("color", self.guardianAngel.reviveColor)
+    else
+        love.graphics.setShader()
+    end
+
+
     if not self.frozen then
-        if self.levelUpActive then
+        if self.guardianAngel.reviveEffectActive then
+            love.graphics.setShader(self.guardianAngel.reviveShader)
+            self.guardianAngel.reviveShader:send("time", love.timer.getTime())
+            self.guardianAngel.reviveShader:send("color", self.guardianAngel.reviveColor)
+
+        elseif self.levelUpActive then
             love.graphics.setShader(auraShader)
             love.graphics.setColor(1, 1, 1, 1)
 
@@ -242,7 +293,8 @@ function Player:draw()
             local auraW = self.auraImage:getWidth() * scale
             local auraH = self.auraImage:getHeight() * scale
 
-            love.graphics.draw(self.auraImage, cx - (auraW) / 2, cy - (auraH) / 2, 0, scale, scale)
+            love.graphics.draw(self.auraImage, cx - auraW / 2, cy - auraH / 2, 0, scale, scale)
+
         else
             love.graphics.setShader()
         end
@@ -300,6 +352,10 @@ end
 
 function Player:takeDamage(amount)
     if not self.alive then return end
+
+    if self.guardianAngel.reviveEffectActive then
+        return
+    end
 	self.hp = math.max(self.hp - amount, 0)
 	if self.hp <= 0 then
 		self.hp = 0
