@@ -159,7 +159,8 @@ function Player:load(uiRef)
         reviveEffectTimer = 0,
         reviveEffectActive = false,
         reviveShader = love.graphics.newShader("Shaders/revive_shader.glsl"),
-        reviveColor = {1.0, 1.0, 1.0, 1.0}
+        reviveColor = {1.0, 1.0, 1.0, 1.0},
+        sound = love.audio.newSource("Player/Assets/Sounds/revive.ogg", "static")
     }
 end
 
@@ -174,6 +175,7 @@ function Player:update(dt, enemies)
                 anim.currentFrame = anim.currentFrame + 1
             else
                 if self.guardianAngel.level > 0 and not self.guardianAngel.used then
+                    self.guardianAngel.sound:play()
                     self.guardianAngel.used = true
                     self.alive = true
                     self.hp = self.maxHp

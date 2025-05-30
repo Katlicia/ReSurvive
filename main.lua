@@ -84,7 +84,8 @@ function love.update(dt)
     
     music:setVolume(ui.musicVolume)
     xpSound:setVolume(ui.sfxVolume)
-    
+    Player.guardianAngel.sound:setVolume(ui.sfxVolume)
+
     for _, weapon in ipairs(Player.weapons) do
         weapon.sound:setVolume(ui.sfxVolume)
     end

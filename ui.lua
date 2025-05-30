@@ -10,7 +10,7 @@ function UI:new()
         buttons = {},
         hoveredIndex = nil,
         mouseDownIndex = nil,
-        musicVolume = 0.5,
+        musicVolume = 0.3,
         sfxVolume = 0.5,
         panelYTarget = (VIRTUAL_HEIGHT / 2 - 400 / 2),
         panelYCurrent = -400,
