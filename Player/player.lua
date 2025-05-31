@@ -217,7 +217,7 @@ function Player:load(uiRef)
     self.bookEffectDuration = 2
 
     self.ring = {
-        name = "Ring",
+        name = "Ring of Greed",
         icon = love.graphics.newImage("Player/Assets/Sprites/ring.png"),
         level = 0,
         addedRadius = 0

@@ -231,7 +231,7 @@ function UI:mousereleased(x, y)
                         table.insert(Player.weapons, Player.heart)
                     end
                     Player:levelUpHeart()
-                elseif item.name == "Ring" then
+                elseif item.name == "Ring of Greed" then
                     if not self:hasWeapon(Player.ring) then
                         table.insert(Player.weapons, Player.ring)
                     end
@@ -729,7 +729,7 @@ function UI:drawLevelUpItems()
         elseif item.name == "Death's Book" then
             table.insert(colorLines, {text = "Kill all enemies.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
-        elseif item.name == "Ring" then
+        elseif item.name == "Ring of Greed" then
             table.insert(colorLines, {text = "Increases pickup range.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "+25 Pickup Radius", color = {0.2, 0.6, 1}})
         else
