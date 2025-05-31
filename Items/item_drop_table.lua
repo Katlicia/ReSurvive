@@ -5,6 +5,7 @@ local ItemDropTable = {
     sprite = love.graphics.newImage("Items/Assets/pepperoni.png"),
     scale = 2,
     effect = function(player)
+        -- player.healSound:play()
         player.hp = math.min(player.maxHp, player.hp + 80)
         player.healFlashTimer = player.healFlashDuration
     end },

@@ -99,12 +99,7 @@ function love.update(dt)
     Player.guardianAngel.sound:setVolume(ui.sfxVolume)
     Player.hitSound:setVolume(ui.sfxVolume)
     Player.lightning.sound:setVolume(ui.sfxVolume)
-
-    for _, weapon in ipairs(Player.weapons) do
-        if weapon.sound then
-            weapon.sound:setVolume(ui.sfxVolume)
-        end
-    end
+    Player.healSound:setVolume(ui.sfxVolume)
 
     if ui.state == GameState.PLAYING or ui.state == GameState.LEVEL then
         Player:LevelUpAnim(dt)

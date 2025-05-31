@@ -198,6 +198,8 @@ function Player:load(uiRef)
         regenTimer = 0,
     }
 
+    self.healSound = love.audio.newSource("Player/Assets/Sounds/heal.ogg", "static")
+
 
     self.whipQuads = {}
     self:generateWhipQuads()

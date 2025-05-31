@@ -213,7 +213,11 @@ function UI:mousereleased(x, y)
                 elseif item.name == "Lightning" then
                     Player.lightning.cooldown = 20 * (0.9 ^ (Player.lightning.level - 1))
                     Player.lightning.damage = 15 + (Player.lightning.level - 1) * 2.5
-                    Player.lightning.enemyNumber = math.min(10, 3 + math.floor((Player.lightning.level - 1) / 2))
+                    local base = 3 + math.floor((Player.lightning.level - 1) / 2) * 6
+                    if Player.lightning.level == 10 then
+                        base = base + 3
+                    end
+                    Player.lightning.enemyNumber = base
                     if not self:hasWeapon(Player.lightning) then
                         table.insert(Player.weapons, Player.lightning)
                     end

@@ -66,7 +66,7 @@ function EnemySpawner:update(dt, player)
             table.insert(self.orbs, orb)
             if enemy.__type == "Undead" or enemy.__type == "Flying Demon" then
                 local currentTime = love.timer.getTime()
-                if currentTime - self.lastItemDropTime >= self.itemDropCooldown then
+                -- if currentTime - self.lastItemDropTime >= self.itemDropCooldown then
                     print(currentTime - self.lastItemDropTime)
                     for _, drop in ipairs(ItemDropTable) do
                         if math.random() < drop.dropRate then
@@ -76,7 +76,7 @@ function EnemySpawner:update(dt, player)
                             break
                         end
                     end
-                end
+                -- end
             end
             table.remove(self.enemies, i)
         end
