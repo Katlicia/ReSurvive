@@ -102,9 +102,7 @@ function UI:createSlider(label, x, y, w, h, onChange, initialValue)
         x = x - 40,
         y = y,
         width = w,
-        -- width = 400,
         height = h,
-        -- height = 40,
         value = initialValue or 0.5,
         onChange = onChange
     })
@@ -206,6 +204,13 @@ function UI:mousereleased(x, y)
                     if not self:hasWeapon(Player.timeStop) then
                         table.insert(Player.weapons, Player.timeStop)
                     end
+                elseif item.name == "Death's Book" then
+                    if not self:hasWeapon(Player.book) then
+                        table.insert(Player.weapons, Player.book)
+                    end
+                        if not self:hasWeapon(Player.book) then
+                            table.insert(Player.weapons, Player.book)
+                        end
                 elseif item.name == "Boots" then
                     Player.speed = Player.wing.boost(Player.wing.level)
                 elseif item.name == "Guardian Angel" then
@@ -226,13 +231,17 @@ function UI:mousereleased(x, y)
                         table.insert(Player.weapons, Player.heart)
                     end
                     Player:levelUpHeart()
+                elseif item.name == "Ring" then
+                    if not self:hasWeapon(Player.ring) then
+                        table.insert(Player.weapons, Player.ring)
+                    end
+                    Player.xpRadius = 150 + (item.level * 25)
                 end
                 self.levelUpActive = false
                 self.state = GameState.PLAYING
             end
         end
     end
-
 end
 
 function UI:hasWeapon(weapon)
@@ -351,6 +360,7 @@ function UI:draw()
                 { label = "Max HP", value = Player.maxHp },
                 { label = "HP", value = Player.hp },
                 { label = "Speed", value = Player.speed },
+                { label = "Pickup Radius", value = Player.xpRadius },
                 { label = "Play Time", value = string.format("%.0f sec", EnemySpawner.timeSinceStart) }
             }
 
@@ -716,7 +726,12 @@ function UI:drawLevelUpItems()
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
                 table.insert(colorLines, {text = "HP Regen increases to 0.3/sec.", color = {0.1, 1.0, 0.1}})
             end
-
+        elseif item.name == "Death's Book" then
+            table.insert(colorLines, {text = "Kill all enemies.", color = {1, 1, 1}})
+            table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
+        elseif item.name == "Ring" then
+            table.insert(colorLines, {text = "Increases pickup range.", color = {1, 1, 1}})
+            table.insert(colorLines, {text = "+25 Pickup Radius", color = {0.2, 0.6, 1}})
         else
             table.insert(colorLines, {text = "Upgrade skill", color = {1, 1, 1}})
         end
@@ -735,7 +750,7 @@ end
 
 function UI:showLevelUp()
     local allItems = {}
-    local baseItems = {Player.whip, Player.timeStop, Player.wing, Player.lightning, Player.heart}
+    local baseItems = {Player.whip, Player.timeStop, Player.wing, Player.lightning, Player.heart, Player.book, Player.ring}
 
     if Player.guardianAngel.level == 0 and not Player.guardianAngel.addedToUI then
         table.insert(baseItems, Player.guardianAngel)

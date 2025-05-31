@@ -44,6 +44,7 @@ end
 
 function love.load()
     timeStopShader = love.graphics.newShader("Shaders/timestop_shader.glsl")
+    bookShader = love.graphics.newShader("Shaders/book_shader.glsl")
     menuBgShader = love.graphics.newShader("Shaders/menu_background.glsl")
     sceneCanvas = love.graphics.newCanvas(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
     ui = UI:new()
@@ -52,7 +53,6 @@ function love.load()
     music = love.audio.newSource("Assets/music/out_of_body.mp3", "stream")
     music:setLooping(true)
     music:setVolume(0.5)
-
 
     menuMusic = love.audio.newSource("Assets/music/out_of_what.mp3", "stream")
     menuMusic:setLooping(true)
@@ -99,7 +99,10 @@ function love.update(dt)
     Player.guardianAngel.sound:setVolume(ui.sfxVolume)
     Player.hitSound:setVolume(ui.sfxVolume)
     Player.lightning.sound:setVolume(ui.sfxVolume)
+    Player.whip.sound:setVolume(ui.sfxVolume)
     Player.healSound:setVolume(ui.sfxVolume)
+    Player.timeStop.sound:setVolume(ui.sfxVolume)
+    Player.book.sound:setVolume(ui.sfxVolume)
 
     if ui.state == GameState.PLAYING or ui.state == GameState.LEVEL then
         Player:LevelUpAnim(dt)
@@ -169,10 +172,12 @@ function love.draw()
     end
 
     ui:draw()
+    print(Player.bookEffectActive)
 
     love.graphics.setCanvas()
 
     Player:drawTimeStopEffect(sceneCanvas)
+    Player:drawBookEffect(sceneCanvas)
 
     push:start()
     love.graphics.draw(sceneCanvas, 0, 0)
@@ -206,23 +211,20 @@ function love.keypressed(key, scancode, isrepeat)
             ui:setState(GameState.PLAYING)
         end
     end
-    if key == "k" then
-        Player:takeDamage(40)
-    end
-    -- if key == "m" then
-    --     ui:setState(GameState.MENU)
+    -- if key == "k" then
+    --     Player:takeDamage(40)
     -- end
-    if key == "t" then
-        Player.timeStop.level = 1
-        Player:activateTimeStop()
-    end
-    if key == "j" then
-        Player:addXp(20)
-    end
-    -- if key == "r" then
-    --     Player.guardianAngel.level = 1
+    -- -- if key == "m" then
+    -- --     ui:setState(GameState.MENU)
+    -- -- end
+    -- if key == "t" then
+    --     Player.timeStop.level = 1
+    --     Player:activateTimeStop()
     -- end
-    if key == "p" then
-        Player.lightning.level = 1
-    end
+    -- if key == "j" then
+    --     Player:addXp(20)
+    -- end
+    -- -- if key == "r" then
+    -- --     Player.guardianAngel.level = 1
+    -- -- end
 end

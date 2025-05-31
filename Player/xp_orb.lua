@@ -4,7 +4,7 @@ XpOrb.__index = XpOrb
 function XpOrb:new(x, y, amount, sound)
     local self = setmetatable({}, XpOrb)
     if not XpOrb.image then
-        XpOrb.image = love.graphics.newImage("Player/Assets/Sprites/xp.png") -- veya "xp.png"
+        XpOrb.image = love.graphics.newImage("Player/Assets/Sprites/xp.png")
         XpOrb.image:setFilter("nearest", "nearest")
     end
 
@@ -17,7 +17,7 @@ function XpOrb:new(x, y, amount, sound)
     self.tracking = false
     self.trackingDuration = 0
     self.baseSpeed = 100
-    self.acceleration = 100
+    self.acceleration = 1000
     self.maxSpeed = 1000
     self.collected = false
     

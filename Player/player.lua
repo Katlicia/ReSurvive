@@ -137,7 +137,7 @@ function Player:load(uiRef)
         sumTime = 0,
         duration = 4,
         transitionActive = false,
-        cooldown = 120,
+        cooldown = 90,
         getCooldown = function(self)
             if self.level == 0 then
                 return self.cooldown
@@ -196,6 +196,31 @@ function Player:load(uiRef)
         level = 0,
         passiveRegen = 0,
         regenTimer = 0,
+    }
+
+    self.book = {
+        name = "Death's Book",
+        icon = love.graphics.newImage("Player/Assets/Sprites/book.png"),
+        level = 0,
+        sound = love.audio.newSource("Player/Assets/Sounds/book.ogg", "static"),
+        cooldown = 120,
+        getCooldown = function(self)
+            if self.level == 0 then
+                return self.cooldown
+            end
+            return math.max(120, self.cooldown * (0.9 ^ (self.level - 1)))
+        end
+    }
+
+    self.bookEffectActive = false
+    self.bookEffectTimer = 0
+    self.bookEffectDuration = 2
+
+    self.ring = {
+        name = "Ring",
+        icon = love.graphics.newImage("Player/Assets/Sprites/ring.png"),
+        level = 0,
+        addedRadius = 0
     }
 
     self.healSound = love.audio.newSource("Player/Assets/Sounds/heal.ogg", "static")
@@ -284,6 +309,23 @@ function Player:update(dt, enemies)
                 GameStats.lionHeartHealed = GameStats.lionHeartHealed + amount
             end
         end
+
+        if self.book.level > 0 then
+            self.book.timer = (self.book.timer or 0) + dt
+            if self.book.timer >= self.book:getCooldown() then
+                self:activateBook(enemies)
+                self.book.timer = 0
+            end
+        end
+        
+        if self.bookEffectActive then
+            self.bookEffectTimer = self.bookEffectTimer + dt
+            if self.bookEffectTimer > self.bookEffectDuration then
+                self.bookEffectActive = false
+            end
+        end
+
+
     end
 
     -- Update animation row if moving
@@ -309,7 +351,6 @@ function Player:update(dt, enemies)
             self.timeStop.timer = 0
         end
     end
-
 
     self:updateTimeStop(dt)
     if self.guardianAngel.reviveEffectActive then
@@ -338,7 +379,6 @@ function Player:update(dt, enemies)
     if self.hitFlashTimer <= 0 and self.hitSound:isPlaying() then
         self.hitSound:stop()
     end
-
 end
 
 function Player:draw()
@@ -471,8 +511,8 @@ function Player:addXp(amount)
         if self.xp >= self.nextLevelXp then
             self.xp = self.xp - self.nextLevelXp
             self.level = self.level + 1
-            self.nextLevelXp = math.floor(self.nextLevelXp * 1.5)
-            -- self.nextLevelXp = self.nextLevelXp + 15
+            -- self.nextLevelXp = math.floor(self.nextLevelXp * 1.5)
+            self.nextLevelXp = self.nextLevelXp + 15
             self.levelUpActive = true
             self.levelUpEffectTimer = 0
             self.levelUpTextScale = 0.5
@@ -523,7 +563,6 @@ function Player:drawXpBar()
 
     love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("line", x, y, width, height)
-    -- love.graphics.printf("XP: " .. self.xp .. "/" .. self.nextLevelXp .. "  LVL: " .. self.level, x, y-20, width, "center")
 end
 
 
@@ -760,5 +799,42 @@ function Player:levelUpHeart()
         self.heart.passiveRegen = 0.3
     end
 end
+
+function Player:activateBook(enemies)
+    if self.book.level <= 0 then return end
+
+    self.book.sound:play()
+
+    for _, enemy in ipairs(enemies) do
+        if enemy.alive and isOnScreen(enemy) then
+            enemy:takeDamage(enemy.hp)
+            GameStats.enemiesKilledByWeapon[self.book.name] = (GameStats.enemiesKilledByWeapon[self.book.name] or 0) + 1
+        end
+    end
+
+    self:activateBookEffect()
+end
+
+
+function Player:activateBookEffect()
+    self.bookEffectActive = true
+    self.bookEffectTimer = 0
+end
+
+function Player:drawBookEffect(canvas)
+    if self.bookEffectActive then
+        love.graphics.setShader(bookShader)
+        bookShader:send("iTime", self.bookEffectTimer)
+        bookShader:send("iResolution", {canvas:getWidth(), canvas:getHeight()})
+        bookShader:send("iChannel1", canvas)
+        love.graphics.draw(canvas, 0, 0)
+    end
+end
+
+function Player:levelUpRing()
+    if self.ring.level >= self.maxSkillLevel then return end
+    self.ring.level = self.ring.level + 1
+end
+
 
 return Player
