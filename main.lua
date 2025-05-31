@@ -48,6 +48,8 @@ function love.load()
     music = love.audio.newSource("Assets/music/out_of_body.mp3", "stream")
     music:setLooping(true)
     music:setVolume(0.5)
+
+
     menuMusic = love.audio.newSource("Assets/music/out_of_what.mp3", "stream")
     menuMusic:setLooping(true)
     menuMusic:setVolume(0.5)
@@ -86,13 +88,13 @@ function love.update(dt)
         menuBgShader:send("iTime", love.timer.getTime())
         menuBgShader:send("iResolution", {love.graphics.getWidth(), love.graphics.getHeight(), 1.0})
     end
-
     
     music:setVolume(ui.musicVolume)
     menuMusic:setVolume(ui.musicVolume)
     xpSound:setVolume(ui.sfxVolume)
     Player.guardianAngel.sound:setVolume(ui.sfxVolume)
     Player.hitSound:setVolume(ui.sfxVolume)
+    Player.lightning.sound:setVolume(ui.sfxVolume)
 
     for _, weapon in ipairs(Player.weapons) do
         weapon.sound:setVolume(ui.sfxVolume)
@@ -158,8 +160,8 @@ function love.draw()
         love.graphics.setShader()
 
         cam:attach()
-        Player:draw()
         EnemySpawner:draw()
+        Player:draw()
         cam:detach()
 
         Player:drawXpBar()
@@ -203,20 +205,22 @@ function love.keypressed(key, scancode, isrepeat)
             ui:setState(GameState.PLAYING)
         end
     end
-    if key == "k" then
-        Player:takeDamage(100)
-    end
-    if key == "m" then
-        ui:setState(GameState.MENU)
-    end
-    if key == "t" then
-        Player:activateTimeStop()
-    end
+    -- if key == "k" then
+    --     Player:takeDamage(100)
+    -- end
+    -- if key == "m" then
+    --     ui:setState(GameState.MENU)
+    -- end
+    -- if key == "t" then
+    --     Player:activateTimeStop()
+    -- end
     if key == "j" then
         Player:addXp(20)
     end
-    if key == "r" then
-        Player.guardianAngel.level = 1
+    -- if key == "r" then
+    --     Player.guardianAngel.level = 1
+    -- end
+    if key == "p" then
+        Player.lightning.level = 1
     end
-
 end

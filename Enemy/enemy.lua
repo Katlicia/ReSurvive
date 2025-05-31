@@ -24,7 +24,6 @@ function Enemy:init(sprite, frameW, frameH, walkFrameCount, deathFrameCount, wal
     self.hitFlashTimer = 0
     self.hitFlashDuration = 0.2
 
-
     -- Enemy stats
     self.speed = 60
     self.alive = true
@@ -100,6 +99,7 @@ function Enemy:draw()
     local ox = self.frameW / 2
     local oy = self.frameH / 2
 
+    
     self.currentAnim:draw(self.sprite, self.x, self.y, 0, sx, self.scale, ox, oy)
     love.graphics.setShader()
 end

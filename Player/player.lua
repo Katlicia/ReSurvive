@@ -1,3 +1,4 @@
+local anim8 = require "lib.anim8"
 local Player = {}
 
 function Player:load(uiRef)
@@ -137,8 +138,7 @@ function Player:load(uiRef)
             if self.level == 0 then
                 return self.cooldown
             end
-            local reductionFactor = 1 - (self.level - 1) * 0.10
-            return math.max(40, self.cooldown * reductionFactor)
+            return math.max(40, self.cooldown * (0.9 ^ (self.level - 1)))
         end
     }
 
@@ -151,16 +151,9 @@ function Player:load(uiRef)
         end
     }
 
-    self.whipQuads = {}
-    self:generateWhipQuads()
-
-    self.weapons = {
-        self.whip
-    }
-    
     self.guardianAngel = {
         name = "Guardian Angel",
-        icon = love.graphics.newImage("Player/Assets/Sprites/xp.png"),
+        icon = love.graphics.newImage("Player/Assets/Sprites/ga-icon.png"),
         level = 0,
         used = false,
         addedToUI = false,
@@ -171,6 +164,35 @@ function Player:load(uiRef)
         reviveColor = {1.0, 1.0, 1.0, 1.0},
         sound = love.audio.newSource("Player/Assets/Sounds/revive.ogg", "static")
     }
+
+    lightningSprite = love.graphics.newImage("Player/Assets/Sprites/lightning_sheet.png")
+    local g = anim8.newGrid(128, 256, lightningSprite:getWidth(), lightningSprite:getHeight())
+    lightningAnim = anim8.newAnimation(g('1-5', 1), 0.1, "pauseAtEnd")
+
+    self.lightning = {
+        name = "Lightning",
+        icon = love.graphics.newImage("Player/Assets/Sprites/lightning-icon.png"),
+        level = 0,
+        damage = 15,
+        cooldown = 20,
+        sound = love.audio.newSource("Player/Assets/Sounds/lightning.ogg", "static"),
+        enemyNumber = 3,
+        anim = lightningAnim,
+        targets = {},
+        active = false,
+        timer = 0,
+        animFrame = 0,
+        hitApplied = false,
+        animDone = false
+    }
+
+    self.whipQuads = {}
+    self:generateWhipQuads()
+
+    self.weapons = {
+        self.whip
+    }
+
 end
 
 function Player:update(dt, enemies)
@@ -235,6 +257,7 @@ function Player:update(dt, enemies)
             newRow = anim.rows.walk
         end
         Player:whipAttack(dt, enemies)
+        self:lightningAttack(dt, enemies)
     end
 
     -- Update animation row if moving
@@ -285,7 +308,10 @@ function Player:update(dt, enemies)
 end
 
 function Player:draw()
-    print(self.timeStop.timer)
+    print("Lightning Level:", self.lightning.level)
+    print("Lightning Timer:", self.lightning.timer)
+    print("Lightning Active:", self.lightning.active)
+
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
 
@@ -303,7 +329,6 @@ function Player:draw()
     else
         love.graphics.setShader()
     end
-
 
     if not self.frozen then
         if self.guardianAngel.reviveEffectActive then
@@ -341,6 +366,11 @@ function Player:draw()
                 love.graphics.draw(self.whip.sprite, quad, self.x + self.width, self.y - 30, 0, -sx, sy)
             end
         end
+
+        self:drawLightning()
+
+        -- LIGHTNING
+        -- lightningAnim:draw(lightningSprite, x, y, 0, sx, sy)
     end
 end
 
@@ -598,5 +628,91 @@ function Player:activateTimeStop()
     self.timeStop.transitionActive = true
     self.timeStop.sound:play()
 end
+
+function Player:drawLightning()
+    if self.lightning.active then
+        self.lightning.sound:play()
+        for _, enemy in ipairs(self.lightning.targets) do
+            if enemy.alive and isOnScreen(enemy) then
+                local x = enemy.x
+                local y = enemy.y
+                self.lightning.anim:draw(lightningSprite, x, y, 0, 1, 1, 64, 128+64)
+            end
+        end
+    end
+end
+
+function Player:lightningAttack(dt, enemies)
+    if self.lightning.level > 0 then
+        self.lightning.timer = self.lightning.timer + dt
+
+        if not self.lightning.active and self.lightning.timer >= self.lightning.cooldown then
+            local candidates = {}
+            for _, enemy in ipairs(enemies) do
+                if enemy.alive and isOnScreen(enemy) then
+                    table.insert(candidates, enemy)
+                end
+            end
+
+            if #candidates == 0 then return end
+
+            local numTargets = math.min(self.lightning.enemyNumber, #candidates)
+            self.lightning.targets = {}
+
+            while #self.lightning.targets < numTargets do
+                local choice = candidates[math.random(#candidates)]
+                local alreadyChosen = false
+                for _, t in ipairs(self.lightning.targets) do
+                    if t == choice then alreadyChosen = true break end
+                end
+                if not alreadyChosen then table.insert(self.lightning.targets, choice) end
+            end
+
+            self.lightning.active = true
+            self.lightning.timer = 0
+            self.lightning.anim = lightningAnim:clone()
+            self.lightning.anim:gotoFrame(1)
+            self.lightning.hitApplied = false
+        end
+
+        if self.lightning.active then
+            self.lightning.anim:update(dt)
+
+            if not self.lightning.hitApplied and self.lightning.anim.position >= #self.lightning.anim.frames then
+                for _, enemy in ipairs(self.lightning.targets) do
+                    if enemy.alive and isOnScreen(enemy) then
+                        enemy:takeDamage(self.lightning.damage)
+                    end
+                end
+                self.lightning.hitApplied = true
+                self.lightning.animDone = true
+            end
+
+            if self.lightning.animDone == true then
+                self.lightning.active = false
+                self.lightning.targets = {}
+                self.lightning.animDone = false
+            end
+        end
+    end
+end
+
+function isOnScreen(enemy)
+    local ex = enemy.x
+    local ey = enemy.y
+    local ew = enemy.frameW or enemy.width or 32
+    local eh = enemy.frameH or enemy.height or 32
+
+    local screenX = camera and camera.x or 0
+    local screenY = camera and camera.y or 0
+    local screenW = VIRTUAL_WIDTH
+    local screenH = VIRTUAL_HEIGHT
+
+    return ex + ew > screenX and
+           ex < screenX + screenW and
+           ey + eh > screenY and
+           ey < screenY + screenH
+end
+
 
 return Player

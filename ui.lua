@@ -215,7 +215,14 @@ function UI:mousereleased(x, y)
                 if item.name == "Guardian Angel" then
                     Player.guardianAngel.addedToUI = true
                 end
-
+                if item.name == "Lightning" then
+                    Player.lightning.cooldown = 20 * (0.9 ^ (Player.lightning.level - 1))
+                    Player.lightning.damage = 15 + (Player.lightning.level - 1) * 2.5
+                    Player.lightning.enemyNumber = math.min(10, 3 + math.floor((Player.lightning.level - 1) / 2))
+                    if not self:hasWeapon(Player.lightning) then
+                        table.insert(Player.weapons, Player.lightning)
+                    end
+                end
                 self.levelUpActive = false
                 self.state = GameState.PLAYING
             end
@@ -349,6 +356,9 @@ function UI:draw()
                     if weapon.damage then
                         table.insert(weaponStats, { label = weapon.name .. " Damage", value = weapon.damage })
                     end
+                    if weapon.enemyNumber then
+                        table.insert(weaponStats, { label = weapon.name .. " Hit Targets", value = weapon.enemyNumber})
+                    end
                     if weapon.getCooldown then
                         table.insert(weaponStats, { label = weapon.name .. " Cooldown", value = string.format("%.1f", weapon:getCooldown()) })
                     elseif weapon.cooldown then
@@ -360,7 +370,7 @@ function UI:draw()
             local x = panelX + 30
             local y = panelY + 40
             local lineHeight = 30
-            local labelOffset = 160
+            local labelOffset = 300
             local maxLineWidth = 300
 
             love.graphics.print("Player Stats", x, y)
@@ -628,7 +638,7 @@ function UI:drawLevelUpItems()
                 table.insert(colorLines, {text = "Stops time.", color = {1, 1, 1}})
             end
             local cooldown = item.getCooldown and item:getCooldown() or 120
-            table.insert(colorLines, {text = string.format("Cooldown: %.1f sec", cooldown), color = {0.2, 0.6, 1}})
+            table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
 
         elseif item.name == "Boots" then
             if item.level == 0 then
@@ -642,6 +652,15 @@ function UI:drawLevelUpItems()
             table.insert(colorLines, {text = "Revive once on death.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "One-time passive.", color = {1, 0, 1}})
 
+        elseif item.name == "Lightning" then
+            if item.level == 0 then
+                table.insert(colorLines, {text = "Strikes random 3 enemies with lightning.", color = {1, 1, 1}})
+            end
+            table.insert(colorLines, {text = "+2.5 Damage", color = {1, 0.5, 0.2}})
+            table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
+            if (item.level + 1) % 2 == 0 and (3 + math.floor(item.level / 2)) < 10 then
+                table.insert(colorLines, {text = "+1 Target", color = {0.4, 1.0, 0.4}})
+            end
         else
             table.insert(colorLines, {text = "Upgrade skill", color = {1, 1, 1}})
         end
@@ -649,8 +668,10 @@ function UI:drawLevelUpItems()
         local lineY = y + boxWidth + 10
         for _, line in ipairs(colorLines) do
             love.graphics.setColor(line.color)
+            local _, wrappedLines = self.smallFont:getWrap(line.text, boxWidth)
+            local textHeight = #wrappedLines * self.smallFont:getHeight()
             love.graphics.printf(line.text, x, lineY, boxWidth, "center")
-            lineY = lineY + 40
+            lineY = lineY + textHeight + 10
         end
     end
     love.graphics.setColor(1, 1, 1)
@@ -658,7 +679,7 @@ end
 
 function UI:showLevelUp()
     local allItems = {}
-    local baseItems = {Player.whip, Player.timeStop, Player.wing}
+    local baseItems = {Player.whip, Player.timeStop, Player.wing, Player.lightning}
 
     if Player.guardianAngel.level == 0 and not Player.guardianAngel.addedToUI then
         table.insert(baseItems, Player.guardianAngel)
@@ -695,6 +716,5 @@ function UI:showLevelUp()
     self.levelUpActive = true
     self.state = GameState.LEVEL
 end
-
 
 return UI
