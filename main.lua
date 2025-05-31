@@ -26,7 +26,9 @@ GameStats = {
     enemiesByType = {},
     timeSurvived = 0,
     timeStopped = 0,
-    wingBonusPercent = 0
+    wingBonusPercent = 0,
+    lionHeartHealed = 0,
+    enemiesKilledByWeapon = {}
 }
 
 function GameStats:reset()
@@ -36,6 +38,8 @@ function GameStats:reset()
     self.enemiesByType = {}
     self.timeStopped = 0
     self.wingBonusPercent = 0
+    self.lionHeartHealed = 0
+    self.enemiesKilledByWeapon = {}
 end
 
 function love.load()
@@ -97,7 +101,9 @@ function love.update(dt)
     Player.lightning.sound:setVolume(ui.sfxVolume)
 
     for _, weapon in ipairs(Player.weapons) do
-        weapon.sound:setVolume(ui.sfxVolume)
+        if weapon.sound then
+            weapon.sound:setVolume(ui.sfxVolume)
+        end
     end
 
     if ui.state == GameState.PLAYING or ui.state == GameState.LEVEL then
@@ -205,9 +211,9 @@ function love.keypressed(key, scancode, isrepeat)
             ui:setState(GameState.PLAYING)
         end
     end
-    -- if key == "k" then
-    --     Player:takeDamage(100)
-    -- end
+    if key == "k" then
+        Player:takeDamage(40)
+    end
     -- if key == "m" then
     --     ui:setState(GameState.MENU)
     -- end

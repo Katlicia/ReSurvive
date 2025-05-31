@@ -3,11 +3,14 @@ local Skeleton = require("Enemy/skeleton")
 local FlyingDemon = require("Enemy/flying_demon")
 local Undead = require("Enemy/undead")
 local XpOrb = require("Player/xp_orb")
+local ItemDropTable = require("Items.item_drop_table")
+local Item = require("Items.item")
 
 
 local EnemySpawner = {}
 EnemySpawner.enemies = {}
 EnemySpawner.orbs = {}
+EnemySpawner.items = {}
 EnemySpawner.spawnTimer = 0
 EnemySpawner.spawnInterval = 1.0
 EnemySpawner.waveTimer = 0
@@ -15,6 +18,9 @@ EnemySpawner.nextWaveTime = 10
 EnemySpawner.waveSize = 10
 EnemySpawner.timeSinceStart = 0
 EnemySpawner.spawnTimer = 0
+EnemySpawner.lastItemDropTime = 0
+EnemySpawner.itemDropCooldown = 30
+
 
 
 EnemySpawner.enemyTypes = {
@@ -58,6 +64,20 @@ function EnemySpawner:update(dt, player)
         if not enemy.alive and enemy.currentAnim.status == "paused" then
             local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
             table.insert(self.orbs, orb)
+            if enemy.__type == "Undead" or enemy.__type == "Flying Demon" then
+                local currentTime = love.timer.getTime()
+                if currentTime - self.lastItemDropTime >= self.itemDropCooldown then
+                    print(currentTime - self.lastItemDropTime)
+                    for _, drop in ipairs(ItemDropTable) do
+                        if math.random() < drop.dropRate then
+                            local item = Item:new(enemy.x, enemy.y, drop.scale, drop)
+                            table.insert(self.items, item)
+                            self.lastItemDropTime = currentTime
+                            break
+                        end
+                    end
+                end
+            end
             table.remove(self.enemies, i)
         end
     end
@@ -71,6 +91,14 @@ function EnemySpawner:update(dt, player)
         end
     end
 
+    for i = #self.items, 1, -1 do
+        local item = self.items[i]
+        item:update(dt, player)
+        if item.collected then
+            table.remove(self.items, i)
+        end
+    end
+
 end
 
 function EnemySpawner:draw()
@@ -80,6 +108,10 @@ function EnemySpawner:draw()
 
     for _, orb in ipairs(self.orbs) do
         orb:draw()
+    end
+
+    for _, item in ipairs(self.items) do
+        item:draw()
     end
 
 end

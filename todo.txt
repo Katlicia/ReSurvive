@@ -1,4 +1,5 @@
-Pause ekranına statları ekle.
-Yıldırım büyüsü ekle.
 Shader ile yağmur ekle, rastgele yağsın yağmur sesi çal.
-
+3 tane skill ekle.
+Tüm yaratıkları öldürme.
+Max HP arttırma.
+Xp Orb radisuu arttırma

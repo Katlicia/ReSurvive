@@ -87,10 +87,8 @@ function UI:createButton(text, x, y, w, h, callback)
         text = text,
         x = x - 150,
         y = y,
-        -- width = 300,
         width = w,
         height = h,
-        -- height = 150,
         callback = callback,
         clicked = false
     }
@@ -195,7 +193,7 @@ function UI:mousereleased(x, y)
             local xBox = startX + (i - 1) * (boxWidth + spacing)
             if x >= xBox and x <= xBox + boxWidth and
             y >= yBox and y <= yBox + boxWidth then
-                if item.level < Player.maxSkillLevel then
+                if item.name ~= "Lion's Heart" and item.level < Player.maxSkillLevel then
                     item.level = item.level + 1
                     if item.name == "Whip" then
                         item.cooldown = item.cooldown - item.cooldown * 5/100
@@ -208,20 +206,22 @@ function UI:mousereleased(x, y)
                     if not self:hasWeapon(Player.timeStop) then
                         table.insert(Player.weapons, Player.timeStop)
                     end
-                end
-                if item.name == "Boots" then
+                elseif item.name == "Boots" then
                     Player.speed = Player.wing.boost(Player.wing.level)
-                end
-                if item.name == "Guardian Angel" then
+                elseif item.name == "Guardian Angel" then
                     Player.guardianAngel.addedToUI = true
-                end
-                if item.name == "Lightning" then
+                elseif item.name == "Lightning" then
                     Player.lightning.cooldown = 20 * (0.9 ^ (Player.lightning.level - 1))
                     Player.lightning.damage = 15 + (Player.lightning.level - 1) * 2.5
                     Player.lightning.enemyNumber = math.min(10, 3 + math.floor((Player.lightning.level - 1) / 2))
                     if not self:hasWeapon(Player.lightning) then
                         table.insert(Player.weapons, Player.lightning)
                     end
+                elseif item.name == "Lion's Heart" then
+                    if not self:hasWeapon(Player.heart) then
+                        table.insert(Player.weapons, Player.heart)
+                    end
+                    Player:levelUpHeart()
                 end
                 self.levelUpActive = false
                 self.state = GameState.PLAYING
@@ -346,7 +346,8 @@ function UI:draw()
                 { label = "XP", value = Player.xp .. " / " .. Player.nextLevelXp },
                 { label = "Max HP", value = Player.maxHp },
                 { label = "HP", value = Player.hp },
-                { label = "Speed", value = Player.speed }
+                { label = "Speed", value = Player.speed },
+                { label = "Play Time", value = string.format("%.0f sec", EnemySpawner.timeSinceStart) }
             }
 
             local weaponStats = {}
@@ -364,7 +365,19 @@ function UI:draw()
                     elseif weapon.cooldown then
                         table.insert(weaponStats, { label = weapon.name .. " Cooldown", value = string.format("%.1f", weapon.cooldown) })
                     end
+                    if weapon.passiveRegen then
+                        table.insert(weaponStats, { label = weapon.name .. " Health Regen", value = string.format("%.1f/sec", weapon.passiveRegen) })
+                    end
+                    if weapon.name == "Lion's Heart" then
+                        local totalBonusHp = weapon.level * 5
+                        table.insert(weaponStats, { label = weapon.name .. " Bonus Max HP", value = "+" .. totalBonusHp })
+                    end
                 end
+            end
+
+            if Player.guardianAngel and Player.guardianAngel.addedToUI then
+                local statusText = Player.guardianAngel.used and "0/1" or "1/1"
+                table.insert(weaponStats, { label = Player.guardianAngel.name, value = statusText })
             end
 
             local x = panelX + 30
@@ -381,6 +394,7 @@ function UI:draw()
             love.graphics.line(x-5, y+5, x + maxLineWidth, y+5)
             y = y + 10
 
+            
             for _, stat in ipairs(playerStats) do
                 love.graphics.setColor(1, 1, 1)
                 love.graphics.print(stat.label .. ":", x, y)
@@ -403,7 +417,6 @@ function UI:draw()
                 y = y + 10
 
                 for _, stat in ipairs(weaponStats) do
-                    -- print(stat.label)
                     love.graphics.setColor(1, 1, 1)
                     love.graphics.print(stat.label .. ":", x, y)
 
@@ -548,7 +561,7 @@ function UI:drawGameOverStats()
 
     local y = panelY + 70
     local x = panelX + 30
-    local labelOffset = 200
+    local labelOffset = 300
     local lineHeight = 30
 
     local stats = {
@@ -556,34 +569,57 @@ function UI:drawGameOverStats()
         { label = "Total XP", value = GameStats.xpCollected },
         { label = "Level Reached", value = Player.level },
         { label = "Time Survived", value = string.format("%.1f sec", GameStats.timeSurvived) },
-        { label = "Stopped Time", value = string.format("%.1f sec", GameStats.timeStopped) },
+        { label = "Time Stopped by Witch's Clock", value = string.format("%.1f sec", GameStats.timeStopped) },
         { label = "Speed Boost", value = GameStats.wingBonusPercent },
+        { label = "Lion's Heart Healed", value = GameStats.lionHeartHealed}
     }
 
     for _, stat in ipairs(stats) do
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.print(stat.label .. ":", x, y)
+        love.graphics.printf(stat.label .. ":", x, y, labelOffset, "left")
 
         love.graphics.setColor(1, 1, 0.5, 1)
-        love.graphics.print(tostring(stat.value), x + labelOffset, y)
+        love.graphics.printf(tostring(stat.value), x + labelOffset, y, panelWidth - labelOffset - 40, "right")
 
         y = y + lineHeight
     end
 
     y = y + 20
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Kills by Type:", x, y)
+    love.graphics.setColor(1, 0.3, 1, 1)
+    love.graphics.printf("Kills by Type:", x, y, 300, "left")
     y = y + lineHeight
 
     for typeName, count in pairs(GameStats.enemiesByType) do
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.print(typeName .. ":", x, y)
+        love.graphics.printf(typeName .. ":", x, y, labelOffset, "left")
 
         love.graphics.setColor(1, 1, 0.5, 1)
-        love.graphics.print(count, x + labelOffset, y)
+        love.graphics.printf(tostring(count), x + labelOffset, y, panelWidth - labelOffset - 40, "right")
 
         y = y + lineHeight
     end
+
+    y = y + 20
+    love.graphics.setColor(1, 0.3, 0.3, 1.0)
+    love.graphics.printf("Kills by Weapon:", x, y, 300, "left")
+    y = y + lineHeight
+
+    for _, weapon in ipairs(Player.weapons) do
+        local name = weapon.name or "Unknown"
+        if name == "Whip" or name == "Lightning" then
+            local count = GameStats.enemiesKilledByWeapon[name] or 0
+
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.printf(name .. ":", x, y, labelOffset, "left")
+
+            love.graphics.setColor(1, 1, 0.5, 1)
+            love.graphics.printf(tostring(count), x + labelOffset, y, panelWidth - labelOffset - 40, "right")
+
+            y = y + lineHeight
+        end
+    end
+
+    love.graphics.setColor(1, 0, 1, 1)
 end
 
 function UI:drawLevelUpItems()
@@ -652,6 +688,7 @@ function UI:drawLevelUpItems()
             table.insert(colorLines, {text = "Revive once on death.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "One-time passive.", color = {1, 0, 1}})
 
+
         elseif item.name == "Lightning" then
             if item.level == 0 then
                 table.insert(colorLines, {text = "Strikes random 3 enemies with lightning.", color = {1, 1, 1}})
@@ -661,6 +698,27 @@ function UI:drawLevelUpItems()
             if (item.level + 1) % 2 == 0 and (3 + math.floor(item.level / 2)) < 10 then
                 table.insert(colorLines, {text = "+1 Target", color = {0.4, 1.0, 0.4}})
             end
+
+        elseif item.name == "Lion's Heart" then
+            if item.level == 0 then
+                table.insert(colorLines, {text = "Increase maximum HP by 5.", color = {1, 1, 1}})
+            elseif item.level == 1 or item.level == 2 then
+                table.insert(colorLines, {text = "+5 Max HP", color = {1, 1, 1}})
+            elseif item.level == 3 then
+                table.insert(colorLines, {text = "+5 Max HP", color = {1, 1, 1}})
+                table.insert(colorLines, {text = "Gain 0.1 HP regen per second", color = {0.1, 1.0, 0.1}})
+            elseif item.level == 4 or item.level == 5 then
+                table.insert(colorLines, {text = "+5 Max HP", color = {1, 1, 1}})
+            elseif item.level == 6 then
+                table.insert(colorLines, {text = "+5 Max HP", color = {1, 1, 1}})
+                table.insert(colorLines, {text = "Regen increases to 0.2/sec", color = {0.1, 1.0, 0.1}})
+            elseif item.level == 7 or item.level == 8 then
+                table.insert(colorLines, {text = "+5 Max HP", color = {1, 1, 1}})
+            elseif item.level == 9 then
+                table.insert(colorLines, {text = "+5 Max HP", color = {1, 1, 1}})
+                table.insert(colorLines, {text = "Regen increases to 0.3/sec", color = {0.1, 1.0, 0.1}})
+            end
+
         else
             table.insert(colorLines, {text = "Upgrade skill", color = {1, 1, 1}})
         end
@@ -679,7 +737,7 @@ end
 
 function UI:showLevelUp()
     local allItems = {}
-    local baseItems = {Player.whip, Player.timeStop, Player.wing, Player.lightning}
+    local baseItems = {Player.whip, Player.timeStop, Player.wing, Player.lightning, Player.heart}
 
     if Player.guardianAngel.level == 0 and not Player.guardianAngel.addedToUI then
         table.insert(baseItems, Player.guardianAngel)

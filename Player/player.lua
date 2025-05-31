@@ -27,6 +27,7 @@ function Player:load(uiRef)
     levelShader = love.graphics.newShader("Shaders/level_text_shader.glsl")
 
     self.hitShader = love.graphics.newShader("Shaders/player_hit_shader.glsl")
+    self.healShader = love.graphics.newShader("Shaders/heal_shader.glsl")
     
     -- Level up effects
     self.levelUpEffectTimer = 0
@@ -34,14 +35,17 @@ function Player:load(uiRef)
     self.levelUpActive = false
     self.levelUpTextScale = 0.5
     self.levelUpCanvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight())
-
-
+    
+    
     self.sprite = love.graphics.newImage("Player/Assets/Sprites/playersheet.png")
     self.auraImage = love.graphics.newImage("Player/Assets/Sprites/aura.png")
-
+    
     self.hitFlashDuration = 0.3
     self.hitFlashTimer = 0
 
+    self.healFlashDuration = 0.5
+    self.healFlashTimer = 0
+    
     
     -- Player dimensions
     self.x = 1920 / 2 - 64
@@ -127,7 +131,7 @@ function Player:load(uiRef)
         name = "Witch's Clock",
         icon = love.graphics.newImage("Player/Assets/Sprites/timestop-icon.png"),
         level = 0,
-        sound = love.audio.newSource("Player/Assets/Sounds/time.ogg", "static"),
+        sound = love.audio.newSource("Player/Assets/Sounds/time3.ogg", "static"),
         timer = 0,
         transitionTime = 0,
         sumTime = 0,
@@ -185,6 +189,15 @@ function Player:load(uiRef)
         hitApplied = false,
         animDone = false
     }
+
+    self.heart = {
+        name = "Lion's Heart",
+        icon = love.graphics.newImage("Player/Assets/Sprites/heart-icon.png"),
+        level = 0,
+        passiveRegen = 0,
+        regenTimer = 0,
+    }
+
 
     self.whipQuads = {}
     self:generateWhipQuads()
@@ -258,6 +271,17 @@ function Player:update(dt, enemies)
         end
         Player:whipAttack(dt, enemies)
         self:lightningAttack(dt, enemies)
+
+        -- Heart HP regen
+        if self.heart.passiveRegen > 0 then
+            self.heart.regenTimer = self.heart.regenTimer + dt
+            if self.heart.regenTimer >= 1.0 then
+                self.heart.regenTimer = self.heart.regenTimer - 1.0
+                local amount = self.heart.passiveRegen
+                self.hp = math.min(self.hp + amount, self.maxHp)
+                GameStats.lionHeartHealed = GameStats.lionHeartHealed + amount
+            end
+        end
     end
 
     -- Update animation row if moving
@@ -298,7 +322,15 @@ function Player:update(dt, enemies)
 
     if self.hitFlashTimer > 0 then
         self.hitFlashTimer = self.hitFlashTimer - dt
-        if self.hitFlashTimer < 0 then self.hitFlashTimer = 0 end
+        if self.hitFlashTimer < 0 then
+            self.hitFlashTimer = 0
+        end
+
+    elseif self.healFlashTimer > 0 then
+        self.healFlashTimer = self.healFlashTimer - dt
+        if self.healFlashTimer < 0 then
+            self.healFlashTimer = 0
+        end
     end
 
     if self.hitFlashTimer <= 0 and self.hitSound:isPlaying() then
@@ -308,12 +340,6 @@ function Player:update(dt, enemies)
 end
 
 function Player:draw()
-    print(self.timeStop.cooldown)
-    print(self.timeStop.timer)
-    -- print("Lightning Level:", self.lightning.level)
-    -- print("Lightning Timer:", self.lightning.timer)
-    -- print("Lightning Active:", self.lightning.active)
-
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
 
@@ -328,6 +354,9 @@ function Player:draw()
     if self.hitFlashTimer > 0 then
         self.hitShader:send("hitAmount", self.hitFlashTimer / self.hitFlashDuration)
         love.graphics.setShader(self.hitShader)
+    elseif self.healFlashTimer > 0 then
+        self.healShader:send("healAmount", self.healFlashTimer / self.healFlashDuration)
+        love.graphics.setShader(self.healShader)
     else
         love.graphics.setShader()
     end
@@ -361,18 +390,13 @@ function Player:draw()
             local sx = 8
             local sy = 4
             if anim.direction == "right" then
-                -- love.graphics.rectangle("fill", self.x + self.width - self.width / 2, self.y + 20, self.whip.width + self.width / 2, self.whip.height)
                 love.graphics.draw(self.whip.sprite, quad, self.x, self.y - 30, 0, sx, sy)
             else
-                -- love.graphics.rectangle("fill", self.x - self.whip.width, self.y + 20, self.whip.width + self.width / 2, self.whip.height)
                 love.graphics.draw(self.whip.sprite, quad, self.x + self.width, self.y - 30, 0, -sx, sy)
             end
         end
 
         self:drawLightning()
-
-        -- LIGHTNING
-        -- lightningAnim:draw(lightningSprite, x, y, 0, sx, sy)
     end
 end
 
@@ -580,6 +604,7 @@ function Player:whipAttack(dt, enemies)
         for _, enemy in ipairs(enemies) do
             if self:checkWhipHit(enemy) and not self.whip.hasHitEnemies[enemy] then
                 enemy:takeDamage(self.whip.damage)
+                GameStats.enemiesKilledByWeapon[self.whip.name] = (GameStats.enemiesKilledByWeapon[self.whip.name] or 0) + (enemy.hp <= 0 and 1 or 0)
                 self.whip.hasHitEnemies[enemy] = true
             end
         end
@@ -685,6 +710,7 @@ function Player:lightningAttack(dt, enemies)
                 for _, enemy in ipairs(self.lightning.targets) do
                     if enemy.alive and isOnScreen(enemy) then
                         enemy:takeDamage(self.lightning.damage)
+                        GameStats.enemiesKilledByWeapon[self.lightning.name] = (GameStats.enemiesKilledByWeapon[self.lightning.name] or 0) + (enemy.hp <= 0 and 1 or 0)
                     end
                 end
                 self.lightning.hitApplied = true
@@ -717,5 +743,20 @@ function isOnScreen(enemy)
            ey < screenY + screenH
 end
 
+function Player:levelUpHeart()
+    if self.heart.level >= self.maxSkillLevel then return end
+
+    self.heart.level = self.heart.level + 1
+    self.maxHp = self.maxHp + 5
+    self.hp = self.maxHp
+
+    if self.heart.level == 3 then
+        self.heart.passiveRegen = 0.1
+    elseif self.heart.level == 6 then
+        self.heart.passiveRegen = 0.2
+    elseif self.heart.level == 9 then
+        self.heart.passiveRegen = 0.3
+    end
+end
 
 return Player
