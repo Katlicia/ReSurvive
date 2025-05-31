@@ -208,7 +208,7 @@ function Player:load(uiRef)
             if self.level == 0 then
                 return self.cooldown
             end
-            return math.max(120, self.cooldown * (0.9 ^ (self.level - 1)))
+            return math.max(40, self.cooldown * (0.9 ^ (self.level - 1)))
         end
     }
 
@@ -305,16 +305,8 @@ function Player:update(dt, enemies)
             if self.heart.regenTimer >= 1.0 then
                 self.heart.regenTimer = self.heart.regenTimer - 1.0
                 local amount = self.heart.passiveRegen
-                self.hp = math.min(self.hp + amount, self.maxHp)
+                self.maxHp = math.max(self.hp + amount, self.maxHp)
                 GameStats.lionHeartHealed = GameStats.lionHeartHealed + amount
-            end
-        end
-
-        if self.book.level > 0 then
-            self.book.timer = (self.book.timer or 0) + dt
-            if self.book.timer >= self.book:getCooldown() then
-                self:activateBook(enemies)
-                self.book.timer = 0
             end
         end
         
@@ -349,6 +341,14 @@ function Player:update(dt, enemies)
         if self.timeStop.timer >= self.timeStop:getCooldown() then
             self:activateTimeStop()
             self.timeStop.timer = 0
+        end
+    end
+
+    if self.book.level > 0 then
+        self.book.timer = (self.book.timer or 0) + dt
+        if self.book.timer >= self.book:getCooldown() then
+            self:activateBook(enemies)
+            self.book.timer = 0
         end
     end
 
@@ -806,7 +806,7 @@ function Player:activateBook(enemies)
     self.book.sound:play()
 
     for _, enemy in ipairs(enemies) do
-        if enemy.alive and isOnScreen(enemy) then
+        if enemy.alive then
             enemy:takeDamage(enemy.hp)
             GameStats.enemiesKilledByWeapon[self.book.name] = (GameStats.enemiesKilledByWeapon[self.book.name] or 0) + 1
         end

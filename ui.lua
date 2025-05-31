@@ -208,9 +208,6 @@ function UI:mousereleased(x, y)
                     if not self:hasWeapon(Player.book) then
                         table.insert(Player.weapons, Player.book)
                     end
-                        if not self:hasWeapon(Player.book) then
-                            table.insert(Player.weapons, Player.book)
-                        end
                 elseif item.name == "Boots" then
                     Player.speed = Player.wing.boost(Player.wing.level)
                 elseif item.name == "Guardian Angel" then
@@ -660,6 +657,7 @@ function UI:drawLevelUpItems()
     love.graphics.setFont(self.smallFont)
 
     for i, item in ipairs(self.levelUpItems) do
+        print(item)
         local x = startX + (i - 1) * (boxWidth + spacing)
 
         local mx, my = love.mouse.getPosition()
@@ -728,6 +726,7 @@ function UI:drawLevelUpItems()
             end
         elseif item.name == "Death's Book" then
             table.insert(colorLines, {text = "Kill all enemies.", color = {1, 1, 1}})
+            local cooldown = item.getCooldown and item:getCooldown() or 120
             table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
         elseif item.name == "Ring of Greed" then
             table.insert(colorLines, {text = "Increases pickup range.", color = {1, 1, 1}})
@@ -780,8 +779,6 @@ function UI:showLevelUp()
         end
         attempts = attempts + 1
     end
-
-
 
     self.levelUpItems = selected
     self.levelUpActive = true

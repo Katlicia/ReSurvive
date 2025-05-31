@@ -172,7 +172,6 @@ function love.draw()
     end
 
     ui:draw()
-    print(Player.bookEffectActive)
 
     love.graphics.setCanvas()
 
@@ -221,9 +220,9 @@ function love.keypressed(key, scancode, isrepeat)
     --     Player.timeStop.level = 1
     --     Player:activateTimeStop()
     -- end
-    -- if key == "j" then
-    --     Player:addXp(20)
-    -- end
+    if key == "j" then
+        Player:addXp(40)
+    end
     -- -- if key == "r" then
     -- --     Player.guardianAngel.level = 1
     -- -- end
