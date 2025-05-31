@@ -308,9 +308,11 @@ function Player:update(dt, enemies)
 end
 
 function Player:draw()
-    print("Lightning Level:", self.lightning.level)
-    print("Lightning Timer:", self.lightning.timer)
-    print("Lightning Active:", self.lightning.active)
+    print(self.timeStop.cooldown)
+    print(self.timeStop.timer)
+    -- print("Lightning Level:", self.lightning.level)
+    -- print("Lightning Timer:", self.lightning.timer)
+    -- print("Lightning Active:", self.lightning.active)
 
     local scaleX = (anim.direction == "left") and -2 or 2
     local originX = (anim.direction == "left") and anim.quadWidth or 0
@@ -444,6 +446,7 @@ function Player:addXp(amount)
             self.xp = self.xp - self.nextLevelXp
             self.level = self.level + 1
             self.nextLevelXp = math.floor(self.nextLevelXp * 1.5)
+            -- self.nextLevelXp = self.nextLevelXp + 15
             self.levelUpActive = true
             self.levelUpEffectTimer = 0
             self.levelUpTextScale = 0.5

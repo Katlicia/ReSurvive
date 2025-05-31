@@ -211,9 +211,10 @@ function love.keypressed(key, scancode, isrepeat)
     -- if key == "m" then
     --     ui:setState(GameState.MENU)
     -- end
-    -- if key == "t" then
-    --     Player:activateTimeStop()
-    -- end
+    if key == "t" then
+        Player.timeStop.level = 1
+        Player:activateTimeStop()
+    end
     if key == "j" then
         Player:addXp(20)
     end

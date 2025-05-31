@@ -18,10 +18,10 @@ EnemySpawner.spawnTimer = 0
 
 
 EnemySpawner.enemyTypes = {
-    { class = Slime, unlockTime = 0 },
-    { class = Skeleton, unlockTime = 20 },
-    { class = FlyingDemon, unlockTime = 40 },
-    { class = Undead, unlockTime = 60 }
+    { class = Slime, unlockTime = 0, weight = 4 },
+    { class = Skeleton, unlockTime = 20, weight = 3 },
+    { class = FlyingDemon, unlockTime = 40, weight = 2 },
+    { class = Undead, unlockTime = 60, weight = 1 }
 
 }
 
@@ -103,16 +103,30 @@ function EnemySpawner:spawnSingle(player)
     table.insert(self.enemies, enemy)
 end
 
+function EnemySpawner:pickWeightedEnemy()
+    local pool = {}
+    for _, e in ipairs(self.enemyTypes) do
+        if self.timeSinceStart >= e.unlockTime then
+            for i = 1, (e.weight or 1) do
+                table.insert(pool, e.class)
+            end
+        end
+    end
+    return pool[math.random(#pool)]
+end
+
+
 function EnemySpawner:spawnWave(player, count)
     local baseX, baseY = self:getOffscreenSpawnPos(player)
     for i = 1, count do
-        local enemyClass = self:pickRandomEnemy()
+        local enemyClass = self:pickWeightedEnemy()
         local enemy = enemyClass:new()
         enemy.x = baseX + (i % 5) * 60
         enemy.y = baseY + math.floor(i / 5) * 60
         table.insert(self.enemies, enemy)
     end
 end
+
 
 function EnemySpawner:pickRandomEnemy()
     local available = self:getAvailableEnemyTypes()
