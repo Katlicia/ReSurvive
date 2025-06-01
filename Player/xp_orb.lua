@@ -1,5 +1,9 @@
+local UI = require("ui")
 local XpOrb = {}
 XpOrb.__index = XpOrb
+
+XpOrb.globalCombo = 0
+XpOrb.globalComboTimer = 0
 
 function XpOrb:new(x, y, amount, sound)
     local self = setmetatable({}, XpOrb)
@@ -30,14 +34,13 @@ function XpOrb:new(x, y, amount, sound)
     self.trail = {}  -- { {x, y, timeLeft}, ... }
 
 
-    self.xpSound = sound
-    self.xpCombo = 0
-    self.xpComboTimer = 0
+    self.xpSound = sound:clone()
 
     return self
 end
 
 function XpOrb:update(dt, player)
+    self.xpSound:setVolume(Player.ui.sfxVolume)
     self.pulseTimer = self.pulseTimer + dt
     local px = player.x + player.width / 2
     local py = player.y + player.height / 2
@@ -91,20 +94,21 @@ function XpOrb:update(dt, player)
         GameStats.xpCollected = GameStats.xpCollected + self.amount
         player:addXp(self.amount)
 
-        self.xpCombo = self.xpCombo + 1
-        self.xpComboTimer = 0
+        XpOrb.globalCombo = XpOrb.globalCombo + 1
+        XpOrb.globalComboTimer = 0
 
-        local pitch = math.min(1 + self.xpCombo * 0.05, 2.0)
+        local pitch = math.min(1 + XpOrb.globalCombo * 0.05, 5.0)
+
         self.xpSound:setPitch(pitch)
         self.xpSound:stop()
         self.xpSound:play()
     end
 
-    if self.xpCombo > 0 then
-        self.xpComboTimer = self.xpComboTimer + dt
-        if self.xpComboTimer > 0.5 then
-            self.xpCombo = 0
-            self.xpComboTimer = 0
+    if XpOrb.globalCombo > 0 then
+        XpOrb.globalComboTimer = XpOrb.globalComboTimer + dt
+        if XpOrb.globalComboTimer > 0.3 then
+            XpOrb.globalCombo = 0
+            XpOrb.globalComboTimer = 0
         end
     end
 

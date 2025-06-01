@@ -1,3 +1,5 @@
 Shader ile yağmur ekle, rastgele yağsın yağmur sesi çal.
-Yerde item varsa o itemdan gelmesin.
-Book tüm düşmanları öldürsün ekrandakileri değil.
+Müzikleri değiş.
+Düşmanlar uzaklaşınca bir anda yanına geliyor, düzelt.
+Oyun çok kolay, dengele.
+Etten alınan canı azalt.

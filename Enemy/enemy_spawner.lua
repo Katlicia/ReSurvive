@@ -20,7 +20,10 @@ EnemySpawner.timeSinceStart = 0
 EnemySpawner.spawnTimer = 0
 EnemySpawner.lastItemDropTime = 0
 EnemySpawner.itemDropCooldown = 100
-EnemySpawner.activeItemKeys = {}
+EnemySpawner.activeItemKeys = {} 
+EnemySpawner.lastPlayerPos = {x = 0, y = 0}
+EnemySpawner.moveDir = {x = 0, y = 0}
+
 
 
 EnemySpawner.enemyTypes = {
@@ -42,13 +45,13 @@ function EnemySpawner:update(dt, player)
 
     if self.spawnTimer <= 0 then
         self:spawnSingle(player)
-        self.spawnTimer = math.max(0.5, self.spawnInterval - self.timeSinceStart * 0.01)
+        self.spawnTimer = math.max(0.3, self.spawnInterval - self.timeSinceStart * 0.01)
     end
 
     if self.waveTimer >= self.nextWaveTime then
         self:spawnWave(player, self.waveSize)
         self.waveTimer = 0
-        self.nextWaveTime = math.random(15, 25)
+        self.nextWaveTime = math.random(10, 20)
         self.waveSize = self.waveSize + 2
     end
 
@@ -99,11 +102,33 @@ function EnemySpawner:update(dt, player)
         end
     end
 
+    local dx = player.x - (self.lastPlayerPos.x or player.x)
+    local dy = player.y - (self.lastPlayerPos.y or player.y)
+
+    local magnitude = math.sqrt(dx * dx + dy * dy)
+    if magnitude > 0.1 then
+        self.moveDir.x = dx / magnitude
+        self.moveDir.y = dy / magnitude
+    end
+
+    self.lastPlayerPos.x = player.x
+    self.lastPlayerPos.y = player.y
+
+    self.wallSpawnTimer = (self.wallSpawnTimer or 0) + dt
+
+    if self.wallSpawnTimer > 10 then
+        self.wallSpawnTimer = 0
+        self:spawnWallAhead(player, 6, 80)
+    end
+
+
 end
 
 function EnemySpawner:draw()
     for _, enemy in ipairs(self.enemies) do
-        enemy:draw()
+        if enemy:isOnScreen(camera.x, camera.y, love.graphics.getWidth(), love.graphics.getHeight()) then
+            enemy:draw()
+        end
     end
 
     for _, orb in ipairs(self.orbs) do
@@ -177,6 +202,36 @@ function EnemySpawner:spawnInitialWave(player, count)
         table.insert(self.enemies, enemy)
     end
 end
+
+function EnemySpawner:spawnWallAhead(player, length, spacing)
+    local screenW = love.graphics.getWidth()
+    local screenH = love.graphics.getHeight()
+
+    local px, py = player.x, player.y
+    local dirX, dirY = self.moveDir.x, self.moveDir.y
+
+    if dirX == 0 and dirY == 0 then return end
+
+    local spawnDist = math.max(screenW, screenH) / 2 + 200
+
+    local centerX = px + dirX * spawnDist
+    local centerY = py + dirY * spawnDist
+
+    local normalX = -dirY
+    local normalY = dirX
+
+    for i = -length, length do
+        local offsetX = normalX * i * spacing
+        local offsetY = normalY * i * spacing
+
+        local enemyClass = self:pickRandomEnemy()
+        local enemy = enemyClass:new()
+        enemy.x = centerX + offsetX
+        enemy.y = centerY + offsetY
+        table.insert(self.enemies, enemy)
+    end
+end
+
 
 
 return EnemySpawner

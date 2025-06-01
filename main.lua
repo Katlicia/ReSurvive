@@ -50,9 +50,13 @@ function love.load()
     ui = UI:new()
     ui:setState(GameState.MENU)
 
-    music = love.audio.newSource("Assets/music/out_of_body.mp3", "stream")
+    music = love.audio.newSource("Assets/music/out_of_body_loop.mp3", "stream")
     music:setLooping(true)
     music:setVolume(0.5)
+
+    music_effect = love.audio.newSource("Assets/music/out_of_body_pause.mp3", "stream")
+    music_effect:setLooping(true)
+    music_effect:setVolume(0.5)
 
     menuMusic = love.audio.newSource("Assets/music/out_of_what.mp3", "stream")
     menuMusic:setLooping(true)
@@ -62,6 +66,7 @@ function love.load()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     defaultFont = love.graphics.newFont("Assets/font/pixelfont.ttf", 32)
+    xsFont = love.graphics.newFont("Assets/font/pixelfont.ttf", 15)
     love.graphics.setFont(defaultFont)
     spaceShader = love.graphics.newShader("Shaders/space_shader.glsl")
     nebulaShader = love.graphics.newShader("Shaders/nebula_shader.glsl")
@@ -89,11 +94,14 @@ function love.update(dt)
         if not menuMusic:isPlaying() then
             menuMusic:play()
         end
+        music:stop()
+        music_effect:stop()
         menuBgShader:send("iTime", love.timer.getTime())
         menuBgShader:send("iResolution", {love.graphics.getWidth(), love.graphics.getHeight(), 1.0})
     end
     
     music:setVolume(ui.musicVolume)
+    music_effect:setVolume(ui.musicVolume)
     menuMusic:setVolume(ui.musicVolume)
     xpSound:setVolume(ui.sfxVolume)
     Player.guardianAngel.sound:setVolume(ui.sfxVolume)
@@ -111,6 +119,12 @@ function love.update(dt)
     if ui.state == GameState.PLAYING then
         if menuMusic:isPlaying() then
             menuMusic:stop()
+        end
+        if music_effect:isPlaying() then
+            local musicCurrentPos = music_effect:tell()
+            music_effect:pause()
+            music:seek(musicCurrentPos)
+            music:play()
         end
         love.mouse.setVisible(false)
         if not music:isPlaying() then
@@ -131,11 +145,16 @@ function love.update(dt)
             GameStats.timeSurvived = EnemySpawner.timeSinceStart
            ui:setState(GameState.DEAD)
         end
-    else
+    elseif ui.state == GameState.LEVEL then
         love.mouse.setVisible(true)
         if music:isPlaying() then
+            local musicCurrentPos = music:tell()
             music:pause()
+            music_effect:seek(musicCurrentPos)
+            music_effect:play()
         end
+    else
+        love.mouse.setVisible(true)
     end
 end
 
@@ -186,6 +205,9 @@ function love.draw()
     if ui.state == GameState.PLAYING or ui.state == GameState.LEVEL and not Player.frozen then
         Player:drawLevelUpText()
     end
+    love.graphics.setFont(xsFont)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 10, 10)
+    love.graphics.setFont(defaultFont)
 end
 
 function love.mousereleased(x, y, button)
@@ -206,13 +228,23 @@ function love.keypressed(key, scancode, isrepeat)
             ui:setState(GameState.MENU)
         elseif ui.state == GameState.PLAYING then
             ui:setState(GameState.PAUSED)
+            local musicPos = music:tell()
+            music:pause()
+            if not music_effect:isPlaying() then
+                music_effect:seek(musicPos)
+                music_effect:play()
+            end
         elseif ui.state == GameState.PAUSED then
             ui:setState(GameState.PLAYING)
+            local musicPos = music_effect:tell()
+            music_effect:pause()
+            music:seek(musicPos)
+            music:play()
         end
     end
-    -- if key == "k" then
-    --     Player:takeDamage(40)
-    -- end
+    if key == "k" then
+        Player:takeDamage(40)
+    end
     -- -- if key == "m" then
     -- --     ui:setState(GameState.MENU)
     -- -- end

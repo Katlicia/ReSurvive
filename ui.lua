@@ -657,7 +657,6 @@ function UI:drawLevelUpItems()
     love.graphics.setFont(self.smallFont)
 
     for i, item in ipairs(self.levelUpItems) do
-        print(item)
         local x = startX + (i - 1) * (boxWidth + spacing)
 
         local mx, my = love.mouse.getPosition()
@@ -684,7 +683,6 @@ function UI:drawLevelUpItems()
 
         elseif item.name == "Witch's Clock" then
             table.insert(colorLines, {text = "Stops time for " .. Player.timeStop.duration .. " seconds.", color = {1, 1, 1}})
-            local cooldown = item.getCooldown and item:getCooldown() or 120
             table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
 
         elseif item.name == "Boots" then
@@ -692,35 +690,35 @@ function UI:drawLevelUpItems()
             local boostPercent = (0.1 * (item.level + 1)) * 100
             table.insert(colorLines, {text = string.format("+%.0f%% Speed", boostPercent), color = {0.2, 1.0, 0.2}})
 
-
         elseif item.name == "Guardian Angel" then
             table.insert(colorLines, {text = "Revive once on death.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "One-time passive.", color = {1, 0, 1}})
 
-
         elseif item.name == "Lightning" then
+            local nextLevel = item.level + 1
             table.insert(colorLines, {text = "Strikes random " .. Player.lightning.enemyNumber .. " enemies with lightning.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "+2.5 Damage", color = {1, 0.5, 0.2}})
             table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
-            if (item.level + 1) % 2 == 0 and (3 + math.floor(item.level / 2)) < 10 then
+            if (nextLevel + 1) % 2 == 0 and (3 + math.floor(nextLevel / 2)) < 10 then
                 table.insert(colorLines, {text = "+6 Target", color = {0.4, 1.0, 0.4}})
             end
 
         elseif item.name == "Lion's Heart" then
+            local nextLevel = item.level + 1
                 table.insert(colorLines, {text = "Increase maximum HP by 5.", color = {1, 1, 1}})
-            if item.level == 0 or item.level == 1 or item.level == 2 then
+            if nextLevel == 0 or nextLevel == 1 or item.level == 2 then
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
-            elseif item.level == 3 then
+            elseif nextLevel == 3 then
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
                 table.insert(colorLines, {text = "Gain 0.1 HP regen per second.", color = {0.1, 1.0, 0.1}})
-            elseif item.level == 4 or item.level == 5 then
+            elseif nextLevel == 4 or nextLevel == 5 then
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
-            elseif item.level == 6 then
+            elseif nextLevel == 6 then
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
                 table.insert(colorLines, {text = "HP Regen increases to 0.2/sec.", color = {0.1, 1.0, 0.1}})
-            elseif item.level == 7 or item.level == 8 then
+            elseif nextLevel == 7 or nextLevel == 8 then
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
-            elseif item.level == 9 then
+            elseif nextLevel == 9 then
                 table.insert(colorLines, {text = "+5 Max HP", color = {0, 1, 0}})
                 table.insert(colorLines, {text = "HP Regen increases to 0.3/sec.", color = {0.1, 1.0, 0.1}})
             end

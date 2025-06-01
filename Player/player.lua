@@ -28,25 +28,24 @@ function Player:load(uiRef)
 
     self.hitShader = love.graphics.newShader("Shaders/player_hit_shader.glsl")
     self.healShader = love.graphics.newShader("Shaders/heal_shader.glsl")
-    
+
     -- Level up effects
     self.levelUpEffectTimer = 0
     self.levelUpEffectDuration = 2.0
     self.levelUpActive = false
     self.levelUpTextScale = 0.5
     self.levelUpCanvas = love.graphics.newCanvas(love.graphics.getWidth(), love.graphics.getHeight())
-    
-    
+
+
     self.sprite = love.graphics.newImage("Player/Assets/Sprites/playersheet.png")
     self.auraImage = love.graphics.newImage("Player/Assets/Sprites/aura.png")
-    
+
     self.hitFlashDuration = 0.3
     self.hitFlashTimer = 0
 
     self.healFlashDuration = 0.5
     self.healFlashTimer = 0
-    
-    
+
     -- Player dimensions
     self.x = 1920 / 2 - 64
     self.y = 1080 / 2 - 64
@@ -305,7 +304,7 @@ function Player:update(dt, enemies)
             if self.heart.regenTimer >= 1.0 then
                 self.heart.regenTimer = self.heart.regenTimer - 1.0
                 local amount = self.heart.passiveRegen
-                self.maxHp = math.max(self.hp + amount, self.maxHp)
+                self.hp = math.min(self.hp + amount, self.maxHp)
                 GameStats.lionHeartHealed = GameStats.lionHeartHealed + amount
             end
         end
@@ -789,7 +788,6 @@ function Player:levelUpHeart()
 
     self.heart.level = self.heart.level + 1
     self.maxHp = self.maxHp + 5
-    self.hp = self.maxHp
 
     if self.heart.level == 3 then
         self.heart.passiveRegen = 0.1

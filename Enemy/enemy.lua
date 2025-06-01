@@ -66,8 +66,12 @@ function Enemy:update(dt, player)
         local dx, dy = player.x + 80 - self.x, player.y + 80 - self.y
         local dist = math.sqrt(dx * dx + dy * dy)
         if dist > 0 then
-            self.x = self.x + (dx / dist) * self.speed * dt
-            self.y = self.y + (dy / dist) * self.speed * dt
+            local bonusSpeed = math.min(dist * 0.05, 500)  -- max 200 bonus
+            local moveSpeed = self.speed + bonusSpeed
+
+            self.x = self.x + (dx / dist) * moveSpeed * dt
+            self.y = self.y + (dy / dist) * moveSpeed * dt
+
             if math.abs(dx) > 4 then
                 if self.flipDirection then
                     self.direction = dx < 0 and "right" or "left"
@@ -75,6 +79,14 @@ function Enemy:update(dt, player)
                     self.direction = dx < 0 and "left" or "right"
                 end
             end
+        end
+        if dist > 3000 then
+            local screenW = love.graphics.getWidth()
+            local screenH = love.graphics.getHeight()
+            local margin = 300
+            local angle = math.rad(math.random(0, 360))
+            self.x = player.x + math.cos(angle) * (screenW / 2 + margin)
+            self.y = player.y + math.sin(angle) * (screenH / 2 + margin)
         end
 
         if self:checkCollisionWithPlayer(player) then
@@ -132,6 +144,18 @@ function Enemy:die()
     self.alive = false
     self.currentAnim = self.animations.death
     self.currentAnim:gotoFrame(1)
+end
+
+
+function Enemy:isOnScreen(cameraX, cameraY, screenW, screenH)
+    local margin = 64
+    local width = self.frameW * self.scale
+    local height = self.frameH * self.scale
+
+    return self.x + width > cameraX - margin and
+           self.x < cameraX + screenW + margin and
+           self.y + height > cameraY - margin and
+           self.y < cameraY + screenH + margin
 end
 
 function Enemy:updateHitbox()
