@@ -1,1 +1,0 @@
-Shader ile yağmur ekle, rastgele yağsın yağmur sesi çal.
