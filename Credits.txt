@@ -12,6 +12,10 @@ Book/Heart/XpCollector Icon - https://kyrise.itch.io/kyrises-free-16x16-rpg-icon
 Font - Minecraft by Craftron Gaming
 
 Music - Ori
-SFX - Katlicia
+
+SFX
+(Witch's Clock) - Jojo's Bizarre Adventure
+(Revive) - Re:Zero
+Other - Katlicia
 
 https://bdragon1727.itch.io/custom-border-and-panels-menu-all-part

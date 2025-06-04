@@ -130,7 +130,7 @@ function Player:load(uiRef)
         name = "Witch's Clock",
         icon = love.graphics.newImage("Player/Assets/Sprites/time-icon.png"),
         level = 0,
-        sound = love.audio.newSource("Player/Assets/Sounds/time3.ogg", "static"),
+        sound = love.audio.newSource("Player/Assets/Sounds/time.ogg", "static"),
         timer = 0,
         transitionTime = 0,
         sumTime = 0,
