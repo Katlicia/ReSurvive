@@ -14,8 +14,8 @@ function Skeleton:new()
     Enemy.init(self, sprite, frameW, frameH, '1-12', '1-12', 1, 2)
 
     -- Skeleton stats
-    self.speed = 70
-    self.hp = 10
+    self.speed = 100
+    self.hp = 15
     self.damage = 0.05
     self.xpValue = 10
 

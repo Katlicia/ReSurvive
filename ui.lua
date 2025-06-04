@@ -195,7 +195,8 @@ function UI:mousereleased(x, y)
                     item.level = item.level + 1
                     if item.name == "Whip" then
                         item.cooldown = item.cooldown - item.cooldown * 5/100
-                        if item.level > 4 then
+                        local nextLevel = Player.whip.level + 1
+                        if (nextLevel + 1) % 2 == 0 and (3 + math.floor(nextLevel / 2)) < 10 then
                             item.damage = item.damage + 2.5
                         end
                     end
@@ -203,10 +204,12 @@ function UI:mousereleased(x, y)
                 if item.name == "Witch's Clock" then
                     if not self:hasWeapon(Player.timeStop) then
                         table.insert(Player.weapons, Player.timeStop)
+                        Player.timeStop.justAcquired = true
                     end
                 elseif item.name == "Death's Book" then
                     if not self:hasWeapon(Player.book) then
                         table.insert(Player.weapons, Player.book)
+                        Player.book.justAcquired = true
                     end
                 elseif item.name == "Boots" then
                     Player.speed = Player.wing.boost(Player.wing.level)
@@ -222,6 +225,7 @@ function UI:mousereleased(x, y)
                     Player.lightning.enemyNumber = base
                     if not self:hasWeapon(Player.lightning) then
                         table.insert(Player.weapons, Player.lightning)
+                        Player.lightning.justAcquired = true
                     end
                 elseif item.name == "Lion's Heart" then
                     if not self:hasWeapon(Player.heart) then
@@ -663,7 +667,7 @@ function UI:drawLevelUpItems()
         local hovered = mx >= x and mx <= x + boxWidth and my >= y and my <= y + boxWidth
 
         love.graphics.setColor(hovered and 1 or 0.3, 0.3, 0.3, 0.85)
-        love.graphics.rectangle("fill", x, y, boxWidth, boxWidth, 12, 12)
+        -- love.graphics.rectangle("fill", x, y, boxWidth, boxWidth, 12, 12)
         love.graphics.setColor(1, 1, 1)
 
         love.graphics.draw(item.icon, x + 20, y + 20, 0, 2.2, 2.2)
@@ -675,9 +679,10 @@ function UI:drawLevelUpItems()
         local colorLines = {}
 
         if item.name == "Whip" then
+            local nextLevel = Player.whip.level + 1
             table.insert(colorLines, {text = "Slash enemies.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "Cooldown: -5%", color = {0.2, 0.6, 1}})
-            if item.level + 1 > 4 then
+            if (nextLevel + 1) % 2 == 0 and (3 + math.floor(nextLevel / 2)) < 10 then
                 table.insert(colorLines, {text = "+2.5 Damage", color = {1, 0.2, 0.2}})
             end
 
@@ -698,9 +703,13 @@ function UI:drawLevelUpItems()
             local nextLevel = item.level + 1
             table.insert(colorLines, {text = "Strikes random " .. Player.lightning.enemyNumber .. " enemies with lightning.", color = {1, 1, 1}})
             table.insert(colorLines, {text = "+2.5 Damage", color = {1, 0.5, 0.2}})
-            table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
-            if (nextLevel + 1) % 2 == 0 and (3 + math.floor(nextLevel / 2)) < 10 then
-                table.insert(colorLines, {text = "+6 Target", color = {0.4, 1.0, 0.4}})
+            if (Player.lightning.level > 0) then
+                table.insert(colorLines, {text = "Cooldown: -10%", color = {0.2, 0.6, 1}})
+            end
+            if (Player.lightning.level > 0 )then
+                if (nextLevel + 1) % 2 == 0 and (3 + math.floor(nextLevel / 2)) < 10 then
+                    table.insert(colorLines, {text = "+6 Target", color = {0.4, 1.0, 0.4}})
+                end
             end
 
         elseif item.name == "Lion's Heart" then

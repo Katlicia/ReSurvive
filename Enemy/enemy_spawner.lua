@@ -62,8 +62,10 @@ function EnemySpawner:update(dt, player)
             enemy.counted = true
         end
         if not enemy.alive and enemy.currentAnim.status == "paused" then
-            local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
-            table.insert(self.orbs, orb)
+            if not enemy.killedByBook then
+                local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
+                table.insert(self.orbs, orb)
+            end
             if enemy.__type == "Undead" or enemy.__type == "Flying Demon" then
                 local currentTime = love.timer.getTime()
                 if currentTime - self.lastItemDropTime >= self.itemDropCooldown then

@@ -1,5 +1,1 @@
 Shader ile yağmur ekle, rastgele yağsın yağmur sesi çal.
-Müzikleri değiş.
-Düşmanlar uzaklaşınca bir anda yanına geliyor, düzelt.
-Oyun çok kolay, dengele.
-Etten alınan canı azalt.

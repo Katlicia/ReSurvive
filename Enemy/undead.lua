@@ -14,8 +14,8 @@ function Undead:new()
     Enemy.init(self, sprite, frameW, frameH, '1-8', '1-18', 2, 1)
 
     -- Undead stats
-    self.speed = 30
-    self.hp = 30
+    self.speed = 60
+    self.hp = 40
     self.damage = 0.30
     self.xpValue = 40
 

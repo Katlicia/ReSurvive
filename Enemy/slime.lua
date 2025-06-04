@@ -14,10 +14,10 @@ function Slime:new()
     Enemy.init(self, sprite, frameW, frameH, '1-8', '1-5', 1, 3)
 
     -- Slime stats
-    self.speed = 60
+    self.speed = 90
     self.hp = 5
     self.damage = 0.02
-    self.xpValue = 3
+    self.xpValue = 5
 
     self.scale = 2
     self.flipDirection = true

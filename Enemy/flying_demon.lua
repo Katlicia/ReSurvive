@@ -14,8 +14,8 @@ function FlyingDemon:new()
     Enemy.init(self, sprite, frameW, frameH, '1-4', '1-6', 2, 1)
 
     -- Flying Demon stats
-    self.speed = 70
-    self.hp = 15
+    self.speed = 120
+    self.hp = 25
     self.damage = 0.10
     self.xpValue = 20
 

@@ -6,7 +6,7 @@ local ItemDropTable = {
     scale = 2,
     effect = function(player)
         -- player.healSound:play()
-        player.hp = math.min(player.maxHp, player.hp + 80)
+        player.hp = math.min(player.maxHp, player.hp + 50)
         player.healFlashTimer = player.healFlashDuration
     end },
 

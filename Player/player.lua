@@ -64,7 +64,7 @@ function Player:load(uiRef)
     -- Xp and level
     self.level = 1
     self.xp = 0
-    self.nextLevelXp = 10
+    self.nextLevelXp = 30
     self.xpBarValue = 0
     self.xpLerpSpeed = 4
     self.xpAnimationQueue = {}
@@ -128,7 +128,7 @@ function Player:load(uiRef)
 
     self.timeStop = {
         name = "Witch's Clock",
-        icon = love.graphics.newImage("Player/Assets/Sprites/timestop-icon.png"),
+        icon = love.graphics.newImage("Player/Assets/Sprites/time-icon.png"),
         level = 0,
         sound = love.audio.newSource("Player/Assets/Sounds/time3.ogg", "static"),
         timer = 0,
@@ -142,12 +142,13 @@ function Player:load(uiRef)
                 return self.cooldown
             end
             return math.max(40, self.cooldown * (0.9 ^ (self.level - 1)))
-        end
+        end,
+        justAcquired = false
     }
 
     self.wing = {
         name = "Boots",
-        icon = love.graphics.newImage("Player/Assets/Sprites/wing-icon.png"),
+        icon = love.graphics.newImage("Player/Assets/Sprites/boot-icon.png"),
         level = 0,
         boost = function(level)
             return Player.baseSpeed * (1 + 0.1 * level)
@@ -156,7 +157,7 @@ function Player:load(uiRef)
 
     self.guardianAngel = {
         name = "Guardian Angel",
-        icon = love.graphics.newImage("Player/Assets/Sprites/ga-icon.png"),
+        icon = love.graphics.newImage("Player/Assets/Sprites/guardian-icon.png"),
         level = 0,
         used = false,
         addedToUI = false,
@@ -186,7 +187,8 @@ function Player:load(uiRef)
         timer = 0,
         animFrame = 0,
         hitApplied = false,
-        animDone = false
+        animDone = false,
+        justAcquired = false
     }
 
     self.heart = {
@@ -199,7 +201,7 @@ function Player:load(uiRef)
 
     self.book = {
         name = "Death's Book",
-        icon = love.graphics.newImage("Player/Assets/Sprites/book.png"),
+        icon = love.graphics.newImage("Player/Assets/Sprites/book-icon.png"),
         level = 0,
         sound = love.audio.newSource("Player/Assets/Sounds/book.ogg", "static"),
         cooldown = 120,
@@ -208,7 +210,8 @@ function Player:load(uiRef)
                 return self.cooldown
             end
             return math.max(40, self.cooldown * (0.9 ^ (self.level - 1)))
-        end
+        end,
+        justAcquired = false
     }
 
     self.bookEffectActive = false
@@ -217,13 +220,12 @@ function Player:load(uiRef)
 
     self.ring = {
         name = "Ring of Greed",
-        icon = love.graphics.newImage("Player/Assets/Sprites/ring.png"),
+        icon = love.graphics.newImage("Player/Assets/Sprites/ring-icon.png"),
         level = 0,
         addedRadius = 0
     }
 
     self.healSound = love.audio.newSource("Player/Assets/Sounds/heal.ogg", "static")
-
 
     self.whipQuads = {}
     self:generateWhipQuads()
@@ -308,14 +310,13 @@ function Player:update(dt, enemies)
                 GameStats.lionHeartHealed = GameStats.lionHeartHealed + amount
             end
         end
-        
+
         if self.bookEffectActive then
             self.bookEffectTimer = self.bookEffectTimer + dt
             if self.bookEffectTimer > self.bookEffectDuration then
                 self.bookEffectActive = false
             end
         end
-
 
     end
 
@@ -377,6 +378,19 @@ function Player:update(dt, enemies)
 
     if self.hitFlashTimer <= 0 and self.hitSound:isPlaying() then
         self.hitSound:stop()
+    end
+
+    for _, weapon in ipairs(self.weapons) do
+        if weapon.justAcquired then
+            weapon.justAcquired = false
+            if weapon.name == "Witch's Clock" then
+                self:activateTimeStop()
+            elseif weapon.name == "Death's Book" then
+                self:activateBook(enemies)
+            elseif weapon.name == "Lightning" then
+                self.lightning.timer = self.lightning.cooldown
+            end
+        end
     end
 end
 
@@ -510,8 +524,8 @@ function Player:addXp(amount)
         if self.xp >= self.nextLevelXp then
             self.xp = self.xp - self.nextLevelXp
             self.level = self.level + 1
-            -- self.nextLevelXp = math.floor(self.nextLevelXp * 1.5)
-            self.nextLevelXp = self.nextLevelXp + 15
+            self.nextLevelXp = math.floor(self.nextLevelXp * 1.2)
+            -- self.nextLevelXp = self.nextLevelXp + 15
             self.levelUpActive = true
             self.levelUpEffectTimer = 0
             self.levelUpTextScale = 0.5
@@ -805,6 +819,7 @@ function Player:activateBook(enemies)
 
     for _, enemy in ipairs(enemies) do
         if enemy.alive then
+            enemy.killedByBook = true
             enemy:takeDamage(enemy.hp)
             GameStats.enemiesKilledByWeapon[self.book.name] = (GameStats.enemiesKilledByWeapon[self.book.name] or 0) + 1
         end

@@ -24,6 +24,8 @@ function Enemy:init(sprite, frameW, frameH, walkFrameCount, deathFrameCount, wal
     self.hitFlashTimer = 0
     self.hitFlashDuration = 0.2
 
+    self.killedByBook = self.killedByBook or false
+
     -- Enemy stats
     self.speed = 60
     self.alive = true
