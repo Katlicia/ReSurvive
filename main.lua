@@ -242,24 +242,24 @@ function love.keypressed(key, scancode, isrepeat)
             music:play()
         end
     end
-    if key == "k" then
-        Player:takeDamage(40)
-    end
-    if key == "m" then
-        ui:setState(GameState.MENU)
-    end
-    if key == "t" then
-        Player.timeStop.level = 1
-        Player:activateTimeStop()
-    end
-    if key == "o" then
-        Player.book.level = 1
-        Player:activateBook(EnemySpawner.enemies)
-    end
-    if key == "j" then
-        Player:addXp(40)
-    end
-    if key == "r" then
-        Player.guardianAngel.level = 1
-    end
+    -- if key == "k" then
+    --     Player:takeDamage(40)
+    -- end
+    -- if key == "m" then
+    --     ui:setState(GameState.MENU)
+    -- end
+    -- if key == "t" then
+    --     Player.timeStop.level = 1
+    --     Player:activateTimeStop()
+    -- end
+    -- if key == "o" then
+    --     Player.book.level = 1
+    --     Player:activateBook(EnemySpawner.enemies)
+    -- end
+    -- if key == "j" then
+    --     Player:addXp(40)
+    -- end
+    -- if key == "r" then
+    --     Player.guardianAngel.level = 1
+    -- end
 end
