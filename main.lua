@@ -133,9 +133,9 @@ function love.update(dt)
         GameStats.wingBonusPercent = Player.wing.level * 10
         camera.x = Player.x + Player.width / 2 - love.graphics.getWidth() / 2
         camera.y = Player.y + Player.height / 2 - love.graphics.getHeight() / 2
-        if not Player.timeStop.transitionActive then
-            EnemySpawner:update(dt, Player)
-        end
+
+        EnemySpawner:update(dt, Player)
+
         Player:update(dt, EnemySpawner.enemies)
         cam:lookAt(Player.x + Player.width / 2, Player.y + Player.height / 2)
         if Player.deathAnimDone and music:isPlaying() then

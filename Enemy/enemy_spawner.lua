@@ -20,7 +20,7 @@ EnemySpawner.waveSize = 10
 EnemySpawner.timeSinceStart = 0
 EnemySpawner.lastItemDropTime = 0
 EnemySpawner.itemDropCooldown = 100
-EnemySpawner.activeItemKeys = {} 
+EnemySpawner.activeItemKeys = {}
 EnemySpawner.lastPlayerPos = {x = 0, y = 0}
 EnemySpawner.moveDir = {x = 0, y = 0}
 EnemySpawner.wallSpawnTimer = 0
@@ -52,34 +52,36 @@ function EnemySpawner:update(dt, player)
         self.nextWaveTime = math.random(10, 20)
     end
 
-    for i = #self.enemies, 1, -1 do
-        local enemy = self.enemies[i]
-        enemy:update(dt, player)
-        if not enemy.alive and not enemy.counted then
-            GameStats.enemiesKilled = GameStats.enemiesKilled + 1
-            GameStats.enemiesByType[enemy.__type or "Unknown"] = 
-                (GameStats.enemiesByType[enemy.__type or "Unknown"] or 0) + 1
-            enemy.counted = true
-        end
-        if not enemy.alive and enemy.currentAnim.status == "paused" then
-            if not enemy.killedByBook then
-                local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
-                table.insert(self.orbs, orb)
+    if not Player.timeStop.transitionActive then
+        for i = #self.enemies, 1, -1 do
+            local enemy = self.enemies[i]
+            enemy:update(dt, player)
+            if not enemy.alive and not enemy.counted then
+                GameStats.enemiesKilled = GameStats.enemiesKilled + 1
+                GameStats.enemiesByType[enemy.__type or "Unknown"] = 
+                    (GameStats.enemiesByType[enemy.__type or "Unknown"] or 0) + 1
+                enemy.counted = true
             end
-            if enemy.__type == "Undead" or enemy.__type == "Flying Demon" then
-                local currentTime = love.timer.getTime()
-                if currentTime - self.lastItemDropTime >= self.itemDropCooldown then
-                    for _, drop in ipairs(ItemDropTable) do
-                        if math.random() < drop.dropRate then
-                            local item = Item:new(enemy.x, enemy.y, drop.scale, drop)
-                            table.insert(self.items, item)
-                            self.lastItemDropTime = currentTime
-                            break
+            if not enemy.alive and enemy.currentAnim.status == "paused" then
+                if not enemy.killedByBook then
+                    local orb = XpOrb:new(enemy.x, enemy.y, enemy.xpValue, xpSound)
+                    table.insert(self.orbs, orb)
+                end
+                if enemy.__type == "Undead" or enemy.__type == "Flying Demon" then
+                    local currentTime = love.timer.getTime()
+                    if currentTime - self.lastItemDropTime >= self.itemDropCooldown then
+                        for _, drop in ipairs(ItemDropTable) do
+                            if math.random() < drop.dropRate then
+                                local item = Item:new(enemy.x, enemy.y, drop.scale, drop)
+                                table.insert(self.items, item)
+                                self.lastItemDropTime = currentTime
+                                break
+                            end
                         end
                     end
                 end
+                table.remove(self.enemies, i)
             end
-            table.remove(self.enemies, i)
         end
     end
 

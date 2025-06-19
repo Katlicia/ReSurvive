@@ -1,7 +1,7 @@
 local ItemDropTable = {
 
     { name = "Health Potion",
-    dropRate = 0.01,
+    dropRate = 0.05,
     sprite = love.graphics.newImage("Items/Assets/pepperoni.png"),
     scale = 2,
     effect = function(player)
@@ -12,7 +12,7 @@ local ItemDropTable = {
 
     {
         name = "Xp Collector",
-        dropRate = 0.01,
+        dropRate = 0.05,
         sprite = love.graphics.newImage("Items/Assets/shard.png"),
         scale = 2,
         effect = function(player)
